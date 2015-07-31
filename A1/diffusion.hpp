@@ -1,4 +1,4 @@
-#define EIGEN_USE_MKL_ALL
+//#define EIGEN_USE_MKL_ALL
 
 #include <fstream>
 #include <iostream>
