@@ -1,1 +1,3 @@
 AVENIS (A Very Nice Solver!) is a software package for numerical simulation of large systems by Hybridized Discontinuous Galerkin method.
+
+This project uses deal_II, PETSc, p4est, Hypre, and Eigen3.
