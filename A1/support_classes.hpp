@@ -10,6 +10,18 @@
 
 const std::string currentDateTime();
 
+template <int dim, typename T, int spacedim = dim>
+struct Function
+{
+  Function()
+  {
+  }
+  virtual ~Function()
+  {
+  }
+  virtual T value(const dealii::Point<dim> &x, const dealii::Point<dim> &n) const = 0;
+};
+
 /* BasisFuncs is the structure containing the basis functions, their gradients,
  * and their divergence. The main motivation behind this is to avoid the
  * repeated calculation of bases on a unit cell for every element. This

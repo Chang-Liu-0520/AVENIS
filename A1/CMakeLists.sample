@@ -27,6 +27,7 @@ link_directories(${LINK_DIRECTORIES} "${MKLROOT}/lib/intel64" ${COMPILER_LIB})
 # page of the documentation.
 
 SET(TARGET_SRC
+      input_data.hpp
       jacobi_polynomial.hpp
       support_classes.hpp
       diffusion.hpp
