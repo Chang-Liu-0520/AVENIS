@@ -54,7 +54,7 @@ struct BasisFuncs
    *
    */
   BasisFuncs(const std::vector<dealii::Point<dim>> &Points_inp, const unsigned &n_poly_bases)
-  : poly_order(n_poly_bases)
+    : poly_order(n_poly_bases)
   {
     JacobiP Jacobi_P(poly_order, 0, 0, JacobiP::From_0_to_1);
     for (unsigned i1 = 0; i1 < Points_inp.size(); ++i1)
@@ -112,7 +112,7 @@ struct BasisFuncs_ABF
    */
   BasisFuncs_ABF(const std::vector<dealii::Point<dim>> &Points_inp,
                  const unsigned &n_poly_bases)
-  : poly_order(n_poly_bases)
+    : poly_order(n_poly_bases)
   {
     JacobiP Jacobi_P(poly_order, 0, 0, JacobiP::From_0_to_1);
     for (unsigned i1 = 0; i1 < Points_inp.size(); ++i1)
@@ -139,14 +139,14 @@ struct Cell_Class
   typedef typename std::vector<Cell_Class>::iterator vec_iterator_type;
   Cell_Class() = delete;
   Cell_Class(const dealii_Cell_Type &inp_cell, unsigned id_num_)
-  : n_faces(dealii::GeometryInfo<dim>::faces_per_cell),
-    id_num(id_num_),
-    half_range_flag(n_faces, 0),
-    face_owner_rank(n_faces, -1),
-    dealii_Cell(inp_cell),
-    Face_ID_in_this_rank(n_faces, -2),
-    Face_ID_in_all_ranks(n_faces, -2),
-    BCs(n_faces)
+    : n_faces(dealii::GeometryInfo<dim>::faces_per_cell),
+      id_num(id_num_),
+      half_range_flag(n_faces, 0),
+      face_owner_rank(n_faces, -1),
+      dealii_Cell(inp_cell),
+      Face_ID_in_this_rank(n_faces, -2),
+      Face_ID_in_all_ranks(n_faces, -2),
+      BCs(n_faces)
   {
     pCell_FEValues = nullptr;
     //    pFace_FEValues = nullptr;
@@ -156,15 +156,15 @@ struct Cell_Class
   }
   Cell_Class(const Cell_Class &inp_cell) = delete;
   Cell_Class(Cell_Class &&inp_cell) noexcept
-   : n_faces(inp_cell.n_faces),
-     id_num(inp_cell.id_num),
-     cell_id(inp_cell.cell_id),
-     half_range_flag(inp_cell.half_range_flag),
-     face_owner_rank(inp_cell.face_owner_rank),
-     dealii_Cell(std::move(inp_cell.dealii_Cell)),
-     Face_ID_in_this_rank(inp_cell.Face_ID_in_this_rank),
-     Face_ID_in_all_ranks(inp_cell.Face_ID_in_all_ranks),
-     BCs(inp_cell.BCs)
+    : n_faces(inp_cell.n_faces),
+      id_num(inp_cell.id_num),
+      cell_id(inp_cell.cell_id),
+      half_range_flag(inp_cell.half_range_flag),
+      face_owner_rank(inp_cell.face_owner_rank),
+      dealii_Cell(std::move(inp_cell.dealii_Cell)),
+      Face_ID_in_this_rank(inp_cell.Face_ID_in_this_rank),
+      Face_ID_in_all_ranks(inp_cell.Face_ID_in_all_ranks),
+      BCs(inp_cell.BCs)
   {
   }
   ~Cell_Class()
@@ -205,12 +205,12 @@ template <int dim, int spacedim = dim>
 struct Face_Class
 {
   Face_Class()
-  : n_local_connected_faces(0),
-    n_nonlocal_connected_faces(0),
-    n_local_connected_DOFs(0),
-    n_nonlocal_connected_DOFs(0),
-    num_global_DOFs(0),
-    owner_rank_id(-1)
+    : n_local_connected_faces(0),
+      n_nonlocal_connected_faces(0),
+      n_local_connected_DOFs(0),
+      n_nonlocal_connected_DOFs(0),
+      num_global_DOFs(0),
+      owner_rank_id(-1)
   {
   }
   unsigned n_local_connected_faces;
@@ -225,4 +225,4 @@ struct Face_Class
   std::vector<unsigned> connected_face_of_parent_ghost;
 };
 
-#endif// SUPPORT_CLASSES
+#endif // SUPPORT_CLASSES
