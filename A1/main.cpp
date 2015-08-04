@@ -119,14 +119,9 @@ PetscErrorCode Diffusion_0<dim>::Solve_Linear_Systam()
   if (comm_rank == 0)
     Execution_Time << "Finished solver : " << currentDateTime() << std::endl;
 
-  //  std::cout << "The norm of the solution vector is: " << solution_norm
-  //            << std::endl;
-
   double accuracy;
   VecAXPY(exact_solution, -1, solution_vec);
   VecNorm(exact_solution, NORM_2, &accuracy);
-  //  std::cout << "The accuracy of the solution vector is: " << accuracy
-  //            << std::endl;
 
   IS from, to;
   Vec x;
@@ -310,13 +305,15 @@ int main(int argc, char *args[])
     std::snprintf(help_line,
                   300,
                   "\n"
-                  "Usage : mpiexec -n <num_procs> ./A1 -h_0 "
-                  "<initial_ndiv> "
-                  "-h_n <final_ndiv> -p_0 <initail_order> -p_n <final_order> "
-                  "-amr <0 or 1> -ksp_type cg -pc_type hypre"
+                  "mpiexec -n 8 ./A1 -h_0 2 -h_n 12 -p_0 1 -p_n 2 -amr 1 "
+                  "-pc_type hypre -pc_hypre_type boomeramg "
+                  "-pc_hypre_boomeramg_strong_threshold 0.25 "
+                  "-pc_hypre_boomeramg_coarsen_type CLJP "
+                  "-pc_hypre_boomeramg_max_levels 100 "
+                  "-pc_hypre_boomeramg_interp_type standard -ksp_type cg "
+                  "-face_basis modal"
                   "\n");
     std::cout << help_line << std::endl;
-    std::cout << buffer << std::endl;
     std::ofstream Convergence_Cleaner("Convergence_Result.txt");
     Convergence_Cleaner.close();
     std::ofstream ExecTime_Cleaner("Execution_Time.txt");
@@ -324,6 +321,7 @@ int main(int argc, char *args[])
   }
 
   int p_1, p_2, h_1, h_2, found_options = 1;
+  char face_basis_type[10];
   PetscBool found_option;
   int Adaptive = 0;
 
@@ -339,11 +337,33 @@ int main(int argc, char *args[])
   found_options = found_option && found_options;
   PetscOptionsGetInt(NULL, "-amr", &Adaptive, &found_option);
   found_options = found_option && found_options;
-
+  PetscBool face_basis_option_flag;
+  bool use_nodal_face_basis = false;
+  PetscOptionsGetString(NULL, "-face_basis", face_basis_type, 10, &face_basis_option_flag);
+  if (face_basis_option_flag == PETSC_TRUE)
+    if (strcmp(face_basis_type, "nodal") == 0)
+    {
+      use_nodal_face_basis = true;
+    }
+    else if (strcmp(face_basis_type, "modal") == 0)
+    {
+      use_nodal_face_basis = false;
+    }
+    else
+    {
+      if (rank == 0)
+      {
+        std::cout << " HEY! : The face basis type should either be "
+                     "<nodal> or <modal> "
+                     "(default). \n" << std::endl;
+        std::cout << buffer << std::endl;
+      }
+    }
 
   for (unsigned p1 = (unsigned)p_1; p1 < (unsigned)p_2; ++p1)
   {
-    Diffusion_0<2> diff0(p1, PETSC_COMM_WORLD, size, rank, number_of_threads, Adaptive);
+    Diffusion_0<2> diff0(
+      p1, PETSC_COMM_WORLD, size, rank, number_of_threads, Adaptive, use_nodal_face_basis);
     for (unsigned h1 = (unsigned)h_1; h1 < (unsigned)h_2; ++h1)
     {
       diff0.Setup_System(h1);

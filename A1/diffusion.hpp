@@ -95,12 +95,25 @@ struct Diffusion_0
   static const unsigned n_faces_per_cell = dealii::GeometryInfo<dim>::faces_per_cell;
   typedef typename Cell_Class<dim>::dealii_Cell_Type Cell_Type;
 
+  /**
+   * @brief Diffusion_0: The constructor of the main class of the program.
+   *                     This constructor takes 6 arguments.
+   * @param order: The order of the elements.
+   * @param comm_: The order of the elements.
+   * @param comm_size_: Number of MPI procs.
+   * @param comm_rank_: ID_Num of the current proc.
+   * @param n_threads: Number of OpenMP threads.
+   * @param Adaptive_ON_: A flag which tell to turn on the AMR.
+   * @param use_nodal_face_basis: true if the user wants to use nodal basis on
+   *                              faces.
+   */
   Diffusion_0(const unsigned &order,
               const MPI_Comm &comm_,
               const unsigned &comm_size_,
               const unsigned &comm_rank_,
               const unsigned &n_threads,
-              const bool &Adaptive_ON_);
+              const bool &Adaptive_ON_,
+              const bool &use_nodal_face_basis_);
   ~Diffusion_0();
 
   void FreeUpContainers();
@@ -145,6 +158,7 @@ struct Diffusion_0
   const int Dirichlet_BC_Index = 1;
   const int Neumann_BC_Index = 2;
   const bool Adaptive_ON = true;
+  const bool use_nodal_face_basis;
   void Init_Mesh_Containers();
   void Count_Globals();
   void Assemble_Globals();
@@ -243,14 +257,6 @@ struct Diffusion_0
                      const Eigen::MatrixXd &modal_vector,
                      const Eigen::MatrixXd &mode_to_Qpoint_matrix,
                      double &error);
-
-  template <int poly_dim, typename T>
-  void Project_to_ABF_Basis(const Function<dim, T> func,
-                            const BasisFuncs_ABF<poly_dim> &basis_abf,
-                            const unsigned &component,
-                            const std::vector<dealii::Point<dim>> &points,
-                            const std::vector<double> &weights,
-                            Eigen::MatrixXd &vec);
 
   unsigned n_ghost_cell;
   unsigned n_active_cell;

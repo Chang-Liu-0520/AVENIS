@@ -78,62 +78,42 @@ struct BasisFuncs
       bases_grads.push_back(Ni_grad);
     }
   }
-};
 
-/* This class is actually the same class as BasisFuncs class, except that it
- * produces
- * the basis and its gradient according to ABF polynomials. Hence, the basis
- * itself
- * consists of a vector of 1-Tensors and the grad is a vector of 2-Tensors.
- */
-template <int dim>
-struct BasisFuncs_ABF
-{
-  unsigned poly_order;
-  std::vector<std::vector<dealii::Tensor<1, dim>>> bases;
-  std::vector<std::vector<dealii::Tensor<2, dim>>> bases_grads;
-  /*
-   * As you can see, you can have different values for number of quadrature
-   * points and number of basis functions.
-   * By execution of this constructor the bases[i][j] will contain the value
-   * of jth basis function at ith point. You can assume that functions are
-   * stored in different columns of the same row. Also, different rows
-   * correspond to different points.
-   *
-   *                                function j
-   *                                    |
-   *                                    |
-   *
-   *                            x  ...  x  ...  x
-   *                            .       .       .
-   *                            .       :       .
-   *                            .       x       .
-   *          point i ---->     x      Bij ...  x
-   *                            .       x       .
-   *                            .       :       .
-   *                            .       .       .
-   *                            x  ...  x  ...  x
-   *
-   *
-   *    ======  Now let us consider the matrix B_ij = bases[i][j]  ======
-   * To convert from modal to nodal (where modes are stored in a column vector),
-   * use:
-   *
-   *                               Ni = Bij * Mj
-   *
-   */
-  BasisFuncs_ABF(const std::vector<dealii::Point<dim>> &Points_inp,
-                 const unsigned &n_poly_bases)
-    : poly_order(n_poly_bases)
+  template <int poly_dim, typename T>
+  void Diffusion_0<dim>::Project_to_Basis(const Function<dim, T> &func,
+                                          const std::vector<dealii::Point<dim>> &points,
+                                          const std::vector<double> &weights,
+                                          Eigen::MatrixXd &vec)
   {
-    JacobiP Jacobi_P(poly_order, 0, 0, JacobiP::From_0_to_1);
-    for (unsigned i1 = 0; i1 < Points_inp.size(); ++i1)
+    assert(bases.size() == points.size());
+    assert(points.size() == weights.size());
+    unsigned n_polys = bases[0].size();
+    vec = Eigen::MatrixXd::Zero(n_polys, 1);
+    for (unsigned i1 = 0; i1 < weights.size(); ++i1)
     {
-      dealii::Point<dim> p0 = Points_inp[i1];
-      std::vector<dealii::Tensor<1, dim>> Ni = Jacobi_P.value_ABF(p0);
-      std::vector<dealii::Tensor<2, dim>> Ni_grad = Jacobi_P.grad_ABF(p0);
-      bases.push_back(Ni);
-      bases_grads.push_back(Ni_grad);
+      Eigen::MatrixXd Nj(n_polys, 1);
+      Nj = Eigen::VectorXd::Map(bases[i1].data(), n_polys);
+      vec += weights[i1] * func.value(points[i1], points[i1]) * Nj;
+    }
+  }
+
+  template <int poly_dim, typename T>
+  void
+  Diffusion_0<dim>::Project_to_Basis(const Function<dim, T> &func,
+                                     const std::vector<dealii::Point<dim>> &points,
+                                     const std::vector<dealii::Point<dim>> &normals,
+                                     const std::vector<double> &weights,
+                                     Eigen::MatrixXd &vec)
+  {
+    assert(bases.size() == points.size());
+    assert(points.size() == weights.size());
+    unsigned n_polys = bases[0].size();
+    vec = Eigen::MatrixXd::Zero(n_polys, 1);
+    for (unsigned i1 = 0; i1 < weights.size(); ++i1)
+    {
+      Eigen::MatrixXd Nj(n_polys, 1);
+      Nj = Eigen::VectorXd::Map(bases[i1].data(), n_polys);
+      vec += weights[i1] * func.value(points[i1], normals[i1]) * Nj;
     }
   }
 };

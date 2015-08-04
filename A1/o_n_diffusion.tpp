@@ -6,7 +6,8 @@ Diffusion_0<dim>::Diffusion_0(const unsigned &order,
                               const unsigned &comm_size_,
                               const unsigned &comm_rank_,
                               const unsigned &n_threads,
-                              const bool &Adaptive_ON_)
+                              const bool &Adaptive_ON_,
+                              const bool &use_nodal_face_basis_)
   : comm(comm_),
     comm_size(comm_size_),
     comm_rank(comm_rank_),
@@ -31,6 +32,7 @@ Diffusion_0<dim>::Diffusion_0(const unsigned &order,
     Face_Basis(Gauss_Face1.get_points(), poly_order),
     refn_cycle(0),
     Adaptive_ON(Adaptive_ON_),
+    use_nodal_face_basis(use_nodal_face_basis_),
     n_threads(n_threads)
 {
   if (comm_rank == 0)
@@ -162,31 +164,11 @@ Diffusion_0<dim>::Compute_Error(const Function<dim, dealii::Tensor<1, dim>> &fun
   }
 }
 
-template <int dim>
-template <int poly_dim, typename T>
-void
-Diffusion_0<dim>::Project_to_ABF_Basis(const Function<dim, T> func,
-                                       const BasisFuncs_ABF<poly_dim> &basis_abf,
-                                       const unsigned &component,
-                                       const std::vector<dealii::Point<dim>> &points,
-                                       const std::vector<double> &weights,
-                                       Eigen::MatrixXd &vec)
-{
-  assert(basis_abf.bases.size() == points.size());
-  assert(points.size() == weights.size());
-  unsigned n_polys = basis_abf.bases[0].size();
-  vec = Eigen::MatrixXd::Zero(n_polys, 1);
-  for (unsigned i1 = 0; i1 < weights.size(); ++i1)
-  {
-    Eigen::MatrixXd Nj(n_polys, 1);
-    for (unsigned i_poly = 0; i_poly < n_polys; ++i_poly)
-    {
-      Nj(i_poly, 0) = basis_abf.bases[i1][i_poly][component - 1];
-    }
-    vec += weights[i1] * func.value(points[i1], points[i1]) * Nj;
-  }
-}
-
+/**
+ * In this function we calculate the matrices used in all other methods.
+ * In this calculation we choose to use the nodal or modal basis for the faces
+ * and modal basis for the elements.
+ */
 template <int dim>
 template <typename T>
 void Diffusion_0<dim>::CalculateMatrices(Cell_Class<dim> &cell,
@@ -262,16 +244,25 @@ void Diffusion_0<dim>::CalculateMatrices(Cell_Class<dim> &cell,
     {
       Nj_vec = Eigen::MatrixXd::Zero(dim * n_polys, dim);
       std::vector<double> N_valus = Jacobi_P.value(Projected_Face_Q_Points[i_Q_face]);
+      std::vector<double> half_range_face_basis, face_basis;
+      if (use_nodal_face_basis)
+      {
+        face_basis = Face_Basis.bases[i_Q_face];
+        half_range_face_basis =
+          Jacobi_P.value(Face_Q_Points[i_Q_face], cell.half_range_flag[i_face]);
+      }
+      else
+      {
+        face_basis = Face_Basis.bases[i_Q_face];
+        half_range_face_basis =
+          Jacobi_P.value(Face_Q_Points[i_Q_face], cell.half_range_flag[i_face]);
+      }
       for (unsigned i_polyface = 0; i_polyface < n_polyfaces; ++i_polyface)
       {
         if (cell.half_range_flag[i_face] == 0)
-          NjT_Face(0, i_polyface) = Face_Basis.bases[i_Q_face][i_polyface];
+          NjT_Face(0, i_polyface) = face_basis[i_polyface];
         else
-        {
-          std::vector<double> half_range_face_basis =
-            Jacobi_P.value(Face_Q_Points[i_Q_face], cell.half_range_flag[i_face]);
           NjT_Face(0, i_polyface) = half_range_face_basis[i_polyface];
-        }
       }
       for (unsigned i_poly = 0; i_poly < n_polys; ++i_poly)
       {
@@ -790,7 +781,8 @@ void Diffusion_0<dim>::Calculate_Internal_Unknowns(double *const &local_uhat_vec
     char buffer[200];
     std::snprintf(buffer,
                   200,
-                  " NEl : %10d, || uh - u ||_L2 : %12.4e; || q - qh ||_L2 is: "
+                  " NEl : %10d, || uh - u ||_L2 : %12.4e; || q - qh ||_L2 "
+                  "is: "
                   "%12.4e; || "
                   "div(q - qh) ||_L2 : %12.4e; || u - uh* ||_L2 : %12.4e; || "
                   "div "
@@ -804,7 +796,8 @@ void Diffusion_0<dim>::Calculate_Internal_Unknowns(double *const &local_uhat_vec
     //    Convergence_Result << buffer << std::endl;
     std::snprintf(buffer,
                   200,
-                  " NEl : %10d, || uh - u ||_L2 : %12.4e; || q - qh ||_L2 is: "
+                  " NEl : %10d, || uh - u ||_L2 : %12.4e; || q - qh ||_L2 "
+                  "is: "
                   "%12.4e; || "
                   "div(q - qh) ||_L2 : %12.4e; || u - uh* ||_L2 : %12.4e; || "
                   "div "
