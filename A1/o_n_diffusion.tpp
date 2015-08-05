@@ -92,13 +92,12 @@ void Diffusion_0<dim>::Compute_Error(const Function<dim, double> &func,
 }
 
 template <int dim>
-void
-Diffusion_0<dim>::Compute_Error(const Function<dim, dealii::Tensor<1, dim>> &func,
-                                const std::vector<dealii::Point<dim>> &points_loc,
-                                const std::vector<double> &JxWs,
-                                const Eigen::MatrixXd &modal_vector,
-                                const Eigen::MatrixXd &mode_to_Qpoint_matrix,
-                                double &error)
+void Diffusion_0<dim>::Compute_Error(const Function<dim, dealii::Tensor<1, dim>> &func,
+                                     const std::vector<dealii::Point<dim>> &points_loc,
+                                     const std::vector<double> &JxWs,
+                                     const Eigen::MatrixXd &modal_vector,
+                                     const Eigen::MatrixXd &mode_to_Qpoint_matrix,
+                                     double &error)
 {
   error = 0;
   unsigned n_unknowns = mode_to_Qpoint_matrix.cols();
@@ -227,7 +226,7 @@ void Diffusion_0<dim>::CalculateMatrices(Cell_Class<dim> &cell,
             std::cout << i_polyface << " " << i_Q_face << " "
                       << cell.pFace_FEValues->quadrature_point(i_Q_face) << " "
                       << shit << std::endl;
-            std::cout << shit << std::endl;
+          std::cout << shit << std::endl;
         }
 
         face_basis = Face_Basis.bases[i_Q_face];
@@ -823,11 +822,12 @@ void Diffusion_0<dim>::Internal_Vars_Errors(const Cell_Class<dim> &cell,
         divq_at_i_Qpoint += grad_X[i_dim] * solved_q_vec(i_dim * n_polys + i_poly, 0);
       }
     }
-    Error_div_q += (divq_at_i_Qpoint - divq_func.value(Q_Points_Loc[i_Qpoint],
-                                                       Q_Points_Loc[i_Qpoint])) *
-                   (divq_at_i_Qpoint - divq_func.value(Q_Points_Loc[i_Qpoint],
-                                                       Q_Points_Loc[i_Qpoint])) *
-                   Q_JxWs[i_Qpoint];
+    Error_div_q +=
+      (divq_at_i_Qpoint -
+       divq_func.value(Q_Points_Loc[i_Qpoint], Q_Points_Loc[i_Qpoint])) *
+      (divq_at_i_Qpoint -
+       divq_func.value(Q_Points_Loc[i_Qpoint], Q_Points_Loc[i_Qpoint])) *
+      Q_JxWs[i_Qpoint];
   }
 }
 

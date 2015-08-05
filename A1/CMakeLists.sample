@@ -30,11 +30,11 @@ SET(TARGET_SRC
       diffusion.hpp
       input_data.hpp
       jacobi_polynomial.hpp
-      lagrange_polies.hpp
+      lagrange_polys.hpp
       support_classes.hpp
       grid_operations.tpp
       jacobi_polynomial.cpp
-      lagrange_polies.cpp
+      lagrange_polys.cpp
       main.cpp
       o_n_diffusion.tpp
       petsc_test.cpp
