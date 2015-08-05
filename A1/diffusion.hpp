@@ -137,7 +137,7 @@ struct Diffusion_0
   dealii::QGauss<dim> Gauss_Elem1;
   dealii::QGauss<dim - 1> Gauss_Face1;
   dealii::FE_Q<dim> FE_Elem1;
-  dealii::FE_Q<dim - 1> FE_Face1;
+  //  dealii::FE_Q<dim - 1> FE_Face1;
   dealii::FE_DGQ<dim> DG_Elem1;
   dealii::FESystem<dim> DG_System1;
   dealii::DoFHandler<dim> DoF_H_Refine;
@@ -228,21 +228,6 @@ struct Diffusion_0
   template <typename T, typename U>
   void q_from_u_uhat(
     const U &LDLT_of_A, const T &B, const T &C, const T &uhat, const T &u, T &q);
-
-  template <int poly_dim, typename T>
-  void Project_to_Basis(const Function<dim, T> &func,
-                        const BasisFuncs<poly_dim> &basis,
-                        const std::vector<dealii::Point<dim>> &points,
-                        const std::vector<double> &weights,
-                        Eigen::MatrixXd &vec);
-
-  template <int poly_dim, typename T>
-  void Project_to_Basis(const Function<dim, T> &func,
-                        const BasisFuncs<poly_dim> &basis,
-                        const std::vector<dealii::Point<dim>> &points,
-                        const std::vector<dealii::Point<dim>> &normals,
-                        const std::vector<double> &weights,
-                        Eigen::MatrixXd &vec);
 
   void Compute_Error(const Function<dim, double> &func,
                      const std::vector<dealii::Point<dim>> &points_loc,

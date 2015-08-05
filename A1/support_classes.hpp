@@ -79,11 +79,16 @@ struct BasisFuncs
     }
   }
 
-  template <int poly_dim, typename T>
-  void Diffusion_0<dim>::Project_to_Basis(const Function<dim, T> &func,
-                                          const std::vector<dealii::Point<dim>> &points,
-                                          const std::vector<double> &weights,
-                                          Eigen::MatrixXd &vec)
+  /**
+   * This function projects the function "func" to the current basis.
+   * Since, this is a regular integration, we do not need the JxW. We
+   * need only the weights.
+   */
+  template <int func_dim, typename T>
+  void Project_to_Basis(const Function<func_dim, T> &func,
+                        const std::vector<dealii::Point<func_dim>> &points,
+                        const std::vector<double> &weights,
+                        Eigen::MatrixXd &vec)
   {
     assert(bases.size() == points.size());
     assert(points.size() == weights.size());
@@ -97,13 +102,12 @@ struct BasisFuncs
     }
   }
 
-  template <int poly_dim, typename T>
-  void
-  Diffusion_0<dim>::Project_to_Basis(const Function<dim, T> &func,
-                                     const std::vector<dealii::Point<dim>> &points,
-                                     const std::vector<dealii::Point<dim>> &normals,
-                                     const std::vector<double> &weights,
-                                     Eigen::MatrixXd &vec)
+  template <int func_dim, typename T>
+  void Project_to_Basis(const Function<func_dim, T> &func,
+                        const std::vector<dealii::Point<func_dim>> &points,
+                        const std::vector<dealii::Point<func_dim>> &normals,
+                        const std::vector<double> &weights,
+                        Eigen::MatrixXd &vec)
   {
     assert(bases.size() == points.size());
     assert(points.size() == weights.size());

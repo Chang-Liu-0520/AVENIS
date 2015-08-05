@@ -159,11 +159,11 @@ class JacobiP
           for (unsigned i1 = 0; i1 < n + 1; ++i1)
           {
             grad_N[0] =
-             one_D_grads[0][i1] * one_D_values[1][i2] * one_D_values[2][i3];
+              one_D_grads[0][i1] * one_D_values[1][i2] * one_D_values[2][i3];
             grad_N[1] =
-             one_D_values[0][i1] * one_D_grads[1][i2] * one_D_values[2][i3];
+              one_D_values[0][i1] * one_D_grads[1][i2] * one_D_values[2][i3];
             grad_N[2] =
-             one_D_values[0][i1] * one_D_values[1][i2] * one_D_grads[2][i3];
+              one_D_values[0][i1] * one_D_values[1][i2] * one_D_grads[2][i3];
             grad.push_back(std::move(grad_N));
           }
 
@@ -171,165 +171,6 @@ class JacobiP
     }
     return grad;
   }
-
-  template <int dim>
-  std::vector<dealii::Tensor<1, dim>> value_ABF(const dealii::Point<dim> &P0) const
-  {
-    unsigned poly_space_dim = pow(n + 1, dim) + 2 * pow(n + 1, dim - 1);
-    std::vector<dealii::Tensor<1, dim>> result(poly_space_dim);
-    JacobiP JPn_plus_2(n + 2, alpha, beta, domain);
-
-    std::vector<std::vector<double>> one_D_values;
-    for (unsigned i1 = 0; i1 < dim; i1++)
-      one_D_values.push_back(std::move(value(P0(i1))));
-
-    std::vector<std::vector<double>> Pn_plus_2;
-    for (unsigned i1 = 0; i1 < dim; i1++)
-      Pn_plus_2.push_back(std::move(JPn_plus_2.value(P0(i1))));
-
-    switch (dim)
-    {
-    case 1:
-      for (unsigned i1 = 0; i1 < n + 3; ++i1)
-      {
-        result[i1][0] = Pn_plus_2[0][i1];
-      }
-      break;
-    case 2:
-      for (unsigned i2 = 0; i2 < n + 1; i2++)
-        for (unsigned i1 = 0; i1 < n + 3; ++i1)
-        {
-          unsigned i12 = i2 * (n + 3) + i1;
-          result[i12][0] = Pn_plus_2[0][i1] * one_D_values[1][i2];
-        }
-      for (unsigned i2 = 0; i2 < n + 3; i2++)
-        for (unsigned i1 = 0; i1 < n + 1; ++i1)
-        {
-          unsigned i12 = i2 * (n + 1) + i1;
-          result[i12][1] = one_D_values[0][i1] * Pn_plus_2[1][i2];
-        }
-      break;
-    case 3:
-      for (unsigned i3 = 0; i3 < n + 1; i3++)
-        for (unsigned i2 = 0; i2 < n + 1; i2++)
-          for (unsigned i1 = 0; i1 < n + 3; ++i1)
-          {
-            unsigned i123 = i3 * (n + 1) * (n + 3) + i2 * (n + 3) + i1;
-            result[i123][0] =
-             Pn_plus_2[0][i1] * one_D_values[1][i2] * one_D_values[2][i3];
-          }
-      for (unsigned i3 = 0; i3 < n + 1; i3++)
-        for (unsigned i2 = 0; i2 < n + 3; i2++)
-          for (unsigned i1 = 0; i1 < n + 1; ++i1)
-          {
-            unsigned i123 = i3 * (n + 1) * (n + 3) + i2 * (n + 1) + i1;
-            result[i123][1] =
-             one_D_values[0][i1] * Pn_plus_2[1][i2] * one_D_values[2][i3];
-          }
-      for (unsigned i3 = 0; i3 < n + 3; i3++)
-        for (unsigned i2 = 0; i2 < n + 1; i2++)
-          for (unsigned i1 = 0; i1 < n + 1; ++i1)
-          {
-            unsigned i123 = i3 * (n + 1) * (n + 1) + i2 * (n + 1) + i1;
-            result[i123][2] =
-             one_D_values[0][i1] * one_D_values[1][i2] * Pn_plus_2[0][i1];
-          }
-      break;
-    }
-
-    return result;
-  }
-
-  template <int dim>
-  std::vector<dealii::Tensor<2, dim>> grad_ABF(const dealii::Point<dim> &P0)
-  {
-    unsigned poly_space_dim = pow(n + 1, dim) + 2 * pow(n + 1, dim - 1);
-    std::vector<dealii::Tensor<2, dim>> result(poly_space_dim);
-    JacobiP JPn_plus_2(n + 2, alpha, beta, domain);
-
-    std::vector<std::vector<double>> one_D_values;
-    for (unsigned i1 = 0; i1 < dim; i1++)
-      one_D_values.push_back(std::move(value(P0(i1))));
-
-    std::vector<std::vector<double>> one_D_grads;
-    for (unsigned i1 = 0; i1 < dim; i1++)
-      one_D_grads.push_back(std::move(derivative(P0(i1))));
-
-    std::vector<std::vector<double>> Pn_plus_2;
-    for (unsigned i1 = 0; i1 < dim; i1++)
-      Pn_plus_2.push_back(std::move(JPn_plus_2.value(P0(i1))));
-
-    std::vector<std::vector<double>> grad_Pn_plus_2;
-    for (unsigned i1 = 0; i1 < dim; i1++)
-      grad_Pn_plus_2.push_back(std::move(JPn_plus_2.derivative(P0(i1))));
-
-    switch (dim)
-    {
-    case 1:
-      for (unsigned i1 = 0; i1 < n + 3; ++i1)
-      {
-        result[i1][0][0] = grad_Pn_plus_2[0][i1];
-      }
-      break;
-    case 2:
-      for (unsigned i2 = 0; i2 < n + 1; i2++)
-        for (unsigned i1 = 0; i1 < n + 3; ++i1)
-        {
-          unsigned i12 = i2 * (n + 3) + i1;
-          result[i12][0][0] = grad_Pn_plus_2[0][i1] * one_D_values[1][i2];
-          result[i12][0][1] = Pn_plus_2[0][i1] * one_D_grads[1][i2];
-        }
-      for (unsigned i2 = 0; i2 < n + 3; i2++)
-        for (unsigned i1 = 0; i1 < n + 1; ++i1)
-        {
-          unsigned i12 = i2 * (n + 1) + i1;
-          result[i12][1][0] = one_D_grads[0][i1] * Pn_plus_2[1][i2];
-          result[i12][1][1] = one_D_values[0][i1] * grad_Pn_plus_2[1][i2];
-        }
-      break;
-    case 3:
-      for (unsigned i3 = 0; i3 < n + 1; i3++)
-        for (unsigned i2 = 0; i2 < n + 1; i2++)
-          for (unsigned i1 = 0; i1 < n + 3; ++i1)
-          {
-            unsigned i123 = i3 * (n + 1) * (n + 3) + i2 * (n + 3) + i1;
-            result[i123][0][0] =
-             grad_Pn_plus_2[0][i1] * one_D_values[1][i2] * one_D_values[2][i3];
-            result[i123][0][1] =
-             Pn_plus_2[0][i1] * one_D_grads[1][i2] * one_D_values[2][i3];
-            result[i123][0][2] =
-             Pn_plus_2[0][i1] * one_D_values[1][i2] * one_D_grads[2][i3];
-          }
-      for (unsigned i3 = 0; i3 < n + 1; i3++)
-        for (unsigned i2 = 0; i2 < n + 3; i2++)
-          for (unsigned i1 = 0; i1 < n + 1; ++i1)
-          {
-            unsigned i123 = i3 * (n + 1) * (n + 3) + i2 * (n + 1) + i1;
-            result[i123][1][0] =
-             one_D_grads[0][i1] * Pn_plus_2[1][i2] * one_D_values[2][i3];
-            result[i123][1][1] =
-             one_D_values[0][i1] * grad_Pn_plus_2[1][i2] * one_D_values[2][i3];
-            result[i123][1][2] =
-             one_D_values[0][i1] * Pn_plus_2[1][i2] * one_D_grads[2][i3];
-          }
-      for (unsigned i3 = 0; i3 < n + 3; i3++)
-        for (unsigned i2 = 0; i2 < n + 1; i2++)
-          for (unsigned i1 = 0; i1 < n + 1; ++i1)
-          {
-            unsigned i123 = i3 * (n + 1) * (n + 1) + i2 * (n + 1) + i1;
-            result[i123][2][0] =
-             one_D_grads[0][i1] * one_D_values[1][i2] * Pn_plus_2[0][i1];
-            result[i123][2][1] =
-             one_D_values[0][i1] * one_D_grads[1][i2] * Pn_plus_2[0][i1];
-            result[i123][2][2] =
-             one_D_values[0][i1] * one_D_values[1][i2] * grad_Pn_plus_2[0][i1];
-          }
-      break;
-    }
-
-    return result;
-  }
-
 
   enum Domain
   {
