@@ -2,6 +2,12 @@
 #include "jacobi_polynomial.hpp"
 
 template <int dim, int spacedim>
+JacobiP<dim, spacedim>::JacobiP()
+  : integral_sc_fac(sqrt(2.0))
+{
+}
+
+template <int dim, int spacedim>
 JacobiP<dim, spacedim>::JacobiP(const int &n_in,
                                 const double &alpha_in,
                                 const double &beta_in,
@@ -241,3 +247,6 @@ template <int dim, int spacedim>
 JacobiP<dim, spacedim>::~JacobiP()
 {
 }
+
+Derived_Factory<JacobiP<2, 2>, Poly_Basis<2, 2>, std::string>
+Poly_Factory("jacobi_2_2");

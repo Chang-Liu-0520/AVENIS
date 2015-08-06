@@ -285,8 +285,11 @@ void parse_my_options(const int &rank,
 int main(int argc, char *args[])
 {
 
-  std::unique_ptr<Poly_Basis<2>> a1(new Poly_Basis<2>);
-  a1->create("nodal", a1);
+  int shit;
+  std::unique_ptr<Poly_Basis<2>> a1;
+  a1->create("jacobi_2_2", a1);
+  std::cout << a1->get_type() << std::endl;
+  std::cin >> shit;
 
   SlepcInitialize(&argc, &args, (char *)0, NULL);
   PetscMPIInt rank, size;
@@ -359,8 +362,7 @@ int main(int argc, char *args[])
       {
         std::cout << " HEY! : The face basis type should either be "
                      "<nodal> or <modal> "
-                     "(default). \n"
-                  << std::endl;
+                     "(default). \n" << std::endl;
         std::cout << buffer << std::endl;
       }
     }

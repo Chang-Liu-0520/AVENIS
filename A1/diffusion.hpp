@@ -268,6 +268,7 @@ struct Diffusion_0
 
   std::ofstream Convergence_Result;
   std::ofstream Execution_Time;
+
 };
 
 void Tokenize(const std::string &str_in,

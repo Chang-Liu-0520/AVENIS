@@ -11,11 +11,16 @@ template <int dim, int spacedim = dim>
 class JacobiP : public Poly_Basis<dim, spacedim>
 {
  public:
-  JacobiP() = delete;
+  JacobiP();
   JacobiP(const JacobiP &) = delete;
   JacobiP &operator=(const JacobiP &) = delete;
   JacobiP(const int &, const double &, const double &, const int);
   ~JacobiP();
+
+  std::string get_type()
+  {
+    return "Using Legendre polynomials.";
+  }
 
   std::vector<double> value(double) const;
   std::vector<double> derivative(double) const;
