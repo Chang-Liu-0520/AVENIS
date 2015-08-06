@@ -75,6 +75,7 @@ using namespace ::LinearAlgebraTrilinos;
 #include <Eigen/Cholesky>
 #include <Eigen/SVD>
 
+#include "poly_basis.hpp"
 #include "jacobi_polynomial.hpp"
 #include "input_data.hpp"
 #include "support_classes.hpp"
@@ -136,8 +137,6 @@ struct Diffusion_0
   dealii::MappingQ1<dim> Elem_Mapping;
   dealii::QGauss<dim> Gauss_Elem1;
   dealii::QGauss<dim - 1> Gauss_Face1;
-  dealii::FE_Q<dim> FE_Elem1;
-  //  dealii::FE_Q<dim - 1> FE_Face1;
   dealii::FE_DGQ<dim> DG_Elem1;
   dealii::FESystem<dim> DG_System1;
   dealii::DoFHandler<dim> DoF_H_Refine;
@@ -175,7 +174,7 @@ struct Diffusion_0
 
   template <typename T>
   void CalculateMatrices(Cell_Class<dim> &cell,
-                         const JacobiP &Jacobi_P,
+                         const JacobiP<dim> &Jacobi_P,
                          T &A,
                          T &B,
                          T &C,

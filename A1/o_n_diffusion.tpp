@@ -22,8 +22,6 @@ Diffusion_0<dim>::Diffusion_0(const unsigned &order,
     Elem_Mapping(),
     Gauss_Elem1(quad_order),
     Gauss_Face1(quad_order),
-    FE_Elem1(dealii::QGaussLobatto<1>(poly_order + 1)),
-    //    FE_Face1(dealii::QGaussLobatto<1>(poly_order + 1)),
     DG_Elem1(poly_order),
     DG_System1(DG_Elem1, 1 + dim),
     DoF_H_Refine(Grid1),
@@ -92,12 +90,13 @@ void Diffusion_0<dim>::Compute_Error(const Function<dim, double> &func,
 }
 
 template <int dim>
-void Diffusion_0<dim>::Compute_Error(const Function<dim, dealii::Tensor<1, dim>> &func,
-                                     const std::vector<dealii::Point<dim>> &points_loc,
-                                     const std::vector<double> &JxWs,
-                                     const Eigen::MatrixXd &modal_vector,
-                                     const Eigen::MatrixXd &mode_to_Qpoint_matrix,
-                                     double &error)
+void
+Diffusion_0<dim>::Compute_Error(const Function<dim, dealii::Tensor<1, dim>> &func,
+                                const std::vector<dealii::Point<dim>> &points_loc,
+                                const std::vector<double> &JxWs,
+                                const Eigen::MatrixXd &modal_vector,
+                                const Eigen::MatrixXd &mode_to_Qpoint_matrix,
+                                double &error)
 {
   error = 0;
   unsigned n_unknowns = mode_to_Qpoint_matrix.cols();
@@ -129,7 +128,7 @@ void Diffusion_0<dim>::Compute_Error(const Function<dim, dealii::Tensor<1, dim>>
 template <int dim>
 template <typename T>
 void Diffusion_0<dim>::CalculateMatrices(Cell_Class<dim> &cell,
-                                         const JacobiP &Jacobi_P,
+                                         const JacobiP<dim> &Jacobi_P,
                                          T &A,
                                          T &B,
                                          T &C,
@@ -142,6 +141,7 @@ void Diffusion_0<dim>::CalculateMatrices(Cell_Class<dim> &cell,
   const unsigned n_polys = pow(poly_order + 1, dim);
   const unsigned n_polyfaces = pow(poly_order + 1, dim - 1);
 
+  JacobiP<dim - 1> face_jacobi(poly_order, 0, 0, JacobiP<dim - 1>::From_0_to_1);
   std::vector<dealii::DerivativeForm<1, dim, dim>> D_Forms =
     cell.pCell_FEValues->get_inverse_jacobians();
   std::vector<dealii::Point<dim>> QPoints_Locs =
@@ -204,34 +204,12 @@ void Diffusion_0<dim>::CalculateMatrices(Cell_Class<dim> &cell,
       std::vector<double> half_range_face_basis, face_basis;
       if (use_nodal_face_basis)
       {
-        //        face_basis.reserve(n_polyfaces);
-        for (unsigned i_polyface = 0; i_polyface < n_polyfaces; ++i_polyface)
-        {
-          double shit = cell.pFace_FEValues->shape_value(i_polyface, i_Q_face);
-          face_basis.push_back(cell.pFace_FEValues->shape_value(i_polyface, i_Q_face));
-          if (comm_rank == 0)
-            std::cout << i_polyface << " " << i_Q_face << " "
-                      << cell.pFace_FEValues->quadrature_point(i_Q_face) << " "
-                      << shit << std::endl;
-        }
-        half_range_face_basis =
-          Jacobi_P.value(Face_Q_Points[i_Q_face], cell.half_range_flag[i_face]);
       }
       else
       {
-        for (unsigned i_polyface = 0; i_polyface < n_polyfaces; ++i_polyface)
-        {
-          double shit = cell.pFace_FEValues->shape_value(i_polyface, i_Q_face);
-          if (comm_rank == 0)
-            std::cout << i_polyface << " " << i_Q_face << " "
-                      << cell.pFace_FEValues->quadrature_point(i_Q_face) << " "
-                      << shit << std::endl;
-          std::cout << shit << std::endl;
-        }
-
         face_basis = Face_Basis.bases[i_Q_face];
         half_range_face_basis =
-          Jacobi_P.value(Face_Q_Points[i_Q_face], cell.half_range_flag[i_face]);
+          face_jacobi.value(Face_Q_Points[i_Q_face], cell.half_range_flag[i_face]);
       }
       for (unsigned i_polyface = 0; i_polyface < n_polyfaces; ++i_polyface)
       {
@@ -268,7 +246,7 @@ void Diffusion_0<dim>::Assemble_Globals()
 {
   unsigned n_polys = pow(poly_order + 1, dim);
   unsigned n_polyfaces = pow(poly_order + 1, dim - 1);
-  JacobiP Jacobi_P(poly_order, 0, 0, JacobiP::From_0_to_1);
+  JacobiP<dim> Jacobi_P(poly_order, 0, 0, JacobiP<dim>::From_0_to_1);
   std::vector<double> Q_Weights = Gauss_Elem1.get_weights();
   std::vector<double> Face_Q_Weights = Gauss_Face1.get_weights();
 
@@ -281,14 +259,14 @@ void Diffusion_0<dim>::Assemble_Globals()
   {
 #endif
     dealii::FEValues<dim> FEValues_Elem1(Elem_Mapping,
-                                         FE_Elem1,
+                                         DG_Elem1,
                                          Gauss_Elem1,
                                          dealii::update_JxW_values |
                                            dealii::update_quadrature_points |
                                            dealii::update_inverse_jacobians |
                                            dealii::update_jacobians);
     dealii::FEFaceValues<dim> FEValues_Face1(Elem_Mapping,
-                                             FE_Elem1,
+                                             DG_Elem1,
                                              Gauss_Face1,
                                              dealii::update_values |
                                                dealii::update_JxW_values |
@@ -543,7 +521,7 @@ void Diffusion_0<dim>::Calculate_Internal_Unknowns(double *const &local_uhat_vec
   unsigned n_polys = pow(poly_order + 1, dim);
   unsigned n_postprocessed_polys = pow(poly_order + 2, dim);
   unsigned n_polyfaces = pow(poly_order + 1, dim - 1);
-  JacobiP Jacobi_P(poly_order, 0, 0, JacobiP::From_0_to_1);
+  JacobiP<dim> Jacobi_P(poly_order, 0, 0, JacobiP<dim>::From_0_to_1);
 
   double Error_u = 0;
   double Error_q = 0;
@@ -596,7 +574,7 @@ void Diffusion_0<dim>::Calculate_Internal_Unknowns(double *const &local_uhat_vec
   {
 #endif
     dealii::FEValues<dim> FEValues_Elem1(Elem_Mapping,
-                                         FE_Elem1,
+                                         DG_Elem1,
                                          Gauss_Elem1,
                                          dealii::update_values | dealii::update_gradients |
                                            dealii::update_JxW_values |
@@ -605,7 +583,7 @@ void Diffusion_0<dim>::Calculate_Internal_Unknowns(double *const &local_uhat_vec
                                            dealii::update_jacobians);
     dealii::FEFaceValues<dim> FEValues_Face1(
       Elem_Mapping,
-      FE_Elem1,
+      DG_Elem1,
       Gauss_Face1,
       dealii::update_values | dealii::update_gradients |
         dealii::update_JxW_values | dealii::update_quadrature_points |
@@ -822,12 +800,11 @@ void Diffusion_0<dim>::Internal_Vars_Errors(const Cell_Class<dim> &cell,
         divq_at_i_Qpoint += grad_X[i_dim] * solved_q_vec(i_dim * n_polys + i_poly, 0);
       }
     }
-    Error_div_q +=
-      (divq_at_i_Qpoint -
-       divq_func.value(Q_Points_Loc[i_Qpoint], Q_Points_Loc[i_Qpoint])) *
-      (divq_at_i_Qpoint -
-       divq_func.value(Q_Points_Loc[i_Qpoint], Q_Points_Loc[i_Qpoint])) *
-      Q_JxWs[i_Qpoint];
+    Error_div_q += (divq_at_i_Qpoint - divq_func.value(Q_Points_Loc[i_Qpoint],
+                                                       Q_Points_Loc[i_Qpoint])) *
+                   (divq_at_i_Qpoint - divq_func.value(Q_Points_Loc[i_Qpoint],
+                                                       Q_Points_Loc[i_Qpoint])) *
+                   Q_JxWs[i_Qpoint];
   }
 }
 
@@ -907,7 +884,7 @@ void Diffusion_0<dim>::PostProcess(Cell_Class<dim> &cell,
                                    double &error_div_qstar)
 {
   Eigen::MatrixXd LHS_mat_of_ustar, DB2;
-  JacobiP Jacobi_P_plus1(poly_order + 1, 0, 0, JacobiP::From_0_to_1);
+  JacobiP<dim> Jacobi_P_plus1(poly_order + 1, 0, 0, JacobiP<dim>::From_0_to_1);
 
   std::vector<dealii::Point<dim>> Q_Points_Loc =
     cell.pCell_FEValues->get_quadrature_points();

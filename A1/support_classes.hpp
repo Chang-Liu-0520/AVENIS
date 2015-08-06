@@ -68,7 +68,7 @@ struct BasisFuncs
   BasisFuncs(const std::vector<dealii::Point<dim>> &Points_inp, const unsigned &n_poly_bases)
     : poly_order(n_poly_bases)
   {
-    JacobiP Jacobi_P(poly_order, 0, 0, JacobiP::From_0_to_1);
+    JacobiP<dim> Jacobi_P(poly_order, 0, 0, JacobiP<dim>::From_0_to_1);
     for (unsigned i1 = 0; i1 < Points_inp.size(); ++i1)
     {
       dealii::Point<dim> p0 = Points_inp[i1];
