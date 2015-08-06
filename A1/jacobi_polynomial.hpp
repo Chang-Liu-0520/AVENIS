@@ -8,7 +8,7 @@
 #define Jacobi_Polynomials
 
 template <int dim, int spacedim = dim>
-class JacobiP : public Poly_Basis
+class JacobiP : public Poly_Basis<dim, spacedim>
 {
  public:
   JacobiP() = delete;

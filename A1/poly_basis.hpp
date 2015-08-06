@@ -1,3 +1,4 @@
+#include <class_factory.hpp>
 #include <string>
 #include <vector>
 #include <deal.II/base/tensor.h>
@@ -7,14 +8,12 @@
 #define POLY_BASIS
 
 template <int dim, int spacedim = dim>
-class Poly_Basis
+class Poly_Basis : public Base_Template<Poly_Basis<dim, spacedim>, std::string>
 {
  public:
-  Poly_Basis();
-  Poly_Basis(const Poly_Basis &);
-  Poly_Basis &operator=(const Poly_Basis &);
+  Poly_Basis(){};
 
-  std::vector<double> value(const dealii::Point<dim> &P0) const;
+  virtual std::vector<double> value(const dealii::Point<dim> &P0) const {}
 
   /*
    * This function gives you the values of half-range basis functions, which
@@ -39,12 +38,16 @@ class Poly_Basis
    *               |---|---|
    *               | 1 | 2 |
    */
-  std::vector<double>
-  value(const dealii::Point<dim> &P0, const unsigned half_range) const;
+  virtual std::vector<double>
+  value(const dealii::Point<dim> &P0, const unsigned half_range) const
+  {
+  }
 
-  std::vector<dealii::Tensor<1, dim>> grad(const dealii::Point<dim> &P0) const;
+  virtual std::vector<dealii::Tensor<1, dim>> grad(const dealii::Point<dim> &P0) const
+  {
+  }
 
-  ~Poly_Basis();
+  virtual ~Poly_Basis() {}
 };
 
 #endif // POLY_BASIS
