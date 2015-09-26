@@ -3,7 +3,7 @@
 
 template <int dim, int spacedim>
 Lagrange_Polys<dim, spacedim>::Lagrange_Polys(const std::vector<double> &support_points_,
-                                                int domain_)
+                                              int domain_)
   : support_points(support_points_), n_polys(support_points_.size())
 {
 }
@@ -46,7 +46,7 @@ std::vector<double> Lagrange_Polys<dim, spacedim>::compute(const double &x_) con
 
 template <int dim, int spacedim>
 std::vector<double>
-Lagrange_Polys<dim, spacedim>::value(const dealii::Point<dim> &P0) const
+Lagrange_Polys<dim, spacedim>::value(const dealii::Point<dim, double> &P0) const
 {
   unsigned n_polys = n_polys - 1;
   std::vector<double> result;
@@ -80,7 +80,7 @@ Lagrange_Polys<dim, spacedim>::value(const dealii::Point<dim> &P0) const
 
 template <int dim, int spacedim>
 std::vector<dealii::Tensor<1, dim>>
-Lagrange_Polys<dim, spacedim>::grad(const dealii::Point<dim> &P0) const
+Lagrange_Polys<dim, spacedim>::grad(const dealii::Point<dim, double> &P0) const
 {
   std::vector<dealii::Tensor<1, dim>> grad;
   grad.reserve(pow(n_polys, dim));

@@ -100,7 +100,7 @@ struct Diffusion_0
    * @brief Diffusion_0: The constructor of the main class of the program.
    *                     This constructor takes 6 arguments.
    * @param order: The order of the elements.
-   * @param comm_: The order of the elements.
+   * @param comm_: The MPI communicator.
    * @param comm_size_: Number of MPI procs.
    * @param comm_rank_: ID_Num of the current proc.
    * @param n_threads: Number of OpenMP threads.
@@ -114,7 +114,7 @@ struct Diffusion_0
               const unsigned &comm_rank_,
               const unsigned &n_threads,
               const bool &Adaptive_ON_,
-              const bool &use_nodal_face_basis_);
+              const std::string &face_basis_type_);
   ~Diffusion_0();
 
   void FreeUpContainers();
@@ -137,12 +137,15 @@ struct Diffusion_0
   dealii::MappingQ1<dim> Elem_Mapping;
   dealii::QGauss<dim> Gauss_Elem1;
   dealii::QGauss<dim - 1> Gauss_Face1;
+  dealii::QGaussLobatto<dim - 1> GaussLobatto_Face1;
   dealii::FE_DGQ<dim> DG_Elem1;
   dealii::FESystem<dim> DG_System1;
   dealii::DoFHandler<dim> DoF_H_Refine;
   dealii::DoFHandler<dim> DoF_H1_System;
   BasisFuncs<dim> Elem_Basis;
   BasisFuncs<dim - 1> Face_Basis;
+  std::vector<dealii::Point<dim>> Elem_Supp_Points;
+  std::vector<dealii::Point<dim - 1>> Face_Supp_Points;
   unsigned refn_cycle;
 
   kappa_inv_class<dim, Eigen::MatrixXd> kappa_inv;
@@ -157,7 +160,7 @@ struct Diffusion_0
   const int Dirichlet_BC_Index = 1;
   const int Neumann_BC_Index = 2;
   const bool Adaptive_ON = true;
-  const bool use_nodal_face_basis;
+  const std::string face_basis_type;
   void Init_Mesh_Containers();
   void Count_Globals();
   void Assemble_Globals();
@@ -268,7 +271,6 @@ struct Diffusion_0
 
   std::ofstream Convergence_Result;
   std::ofstream Execution_Time;
-
 };
 
 void Tokenize(const std::string &str_in,

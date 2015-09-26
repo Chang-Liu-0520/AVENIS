@@ -79,6 +79,25 @@ struct BasisFuncs
     }
   }
 
+  BasisFuncs(const std::vector<dealii::Point<dim>> &Intg_Points,
+             const std::vector<dealii::Point<dim>> &Supp_Points,
+             const std::string &basis_type_)
+    : poly_order(Supp_Points.size() - 1)
+  {
+    std::string basis_string = basis_type_ + std::to_string(dim);
+    std::unique_ptr<Poly_Basis<dim>> basis;
+    basis->create(basis_string, basis);
+    basis->init(Supp_Points);
+    for (unsigned i1 = 0; i1 < Intg_Points.size(); ++i1)
+    {
+      dealii::Point<dim> p0 = Intg_Points[i1];
+      std::vector<double> Ni = basis->value(p0);
+      std::vector<dealii::Tensor<1, dim>> Ni_grad = basis->grad(p0);
+      bases.push_back(Ni);
+      bases_grads.push_back(Ni_grad);
+    }
+  }
+
   /**
    * This function projects the function "func" to the current basis.
    * Since, this is a regular integration, we do not need the JxW. We

@@ -7,8 +7,8 @@
 #ifndef Jacobi_Polynomials
 #define Jacobi_Polynomials
 
-template <int dim, int spacedim = dim>
-class JacobiP : public Poly_Basis<dim, spacedim>
+template <int dim>
+class JacobiP : public Poly_Basis<dim>
 {
  public:
   JacobiP();
@@ -17,7 +17,9 @@ class JacobiP : public Poly_Basis<dim, spacedim>
   JacobiP(const int &, const double &, const double &, const int);
   ~JacobiP();
 
-  std::string get_type()
+  void init(const std::vector<dealii::Point<dim>> &Supp_Points);
+
+  std::string get_type() const
   {
     return "Using Legendre polynomials.";
   }

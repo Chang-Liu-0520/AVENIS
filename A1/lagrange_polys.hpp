@@ -17,8 +17,8 @@ class Lagrange_Polys
   std::vector<double> value(const double &) const;
   std::vector<double> derivative(double);
 
-  std::vector<double> value(const dealii::Point<dim> &P0) const;
-  std::vector<dealii::Tensor<1, dim>> grad(const dealii::Point<dim> &P0) const;
+  std::vector<double> value(const dealii::Point<dim, double> &P0) const;
+  std::vector<dealii::Tensor<1, dim>> grad(const dealii::Point<dim, double> &P0) const;
 
  private:
   std::vector<double> support_points;

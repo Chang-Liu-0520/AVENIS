@@ -284,13 +284,6 @@ void parse_my_options(const int &rank,
 
 int main(int argc, char *args[])
 {
-
-  int shit;
-  std::unique_ptr<Poly_Basis<2>> a1;
-  a1->create("jacobi_2_2", a1);
-  std::cout << a1->get_type() << std::endl;
-  std::cin >> shit;
-
   SlepcInitialize(&argc, &args, (char *)0, NULL);
   PetscMPIInt rank, size;
   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
@@ -328,7 +321,7 @@ int main(int argc, char *args[])
   }
 
   int p_1, p_2, h_1, h_2, found_options = 1;
-  char face_basis_type[10];
+  char face_basis_type[100];
   PetscBool found_option;
   int Adaptive = 0;
 
@@ -345,16 +338,14 @@ int main(int argc, char *args[])
   PetscOptionsGetInt(NULL, "-amr", &Adaptive, &found_option);
   found_options = found_option && found_options;
   PetscBool face_basis_option_flag;
-  bool use_nodal_face_basis = false;
-  PetscOptionsGetString(NULL, "-face_basis", face_basis_type, 10, &face_basis_option_flag);
+  PetscOptionsGetString(NULL, "-face_basis", face_basis_type, 100, &face_basis_option_flag);
   if (face_basis_option_flag == PETSC_TRUE)
-    if (strcmp(face_basis_type, "nodal") == 0)
+  {
+    if (strcmp(face_basis_type, "lagrange") == 0)
     {
-      use_nodal_face_basis = true;
     }
-    else if (strcmp(face_basis_type, "modal") == 0)
+    else if (strcmp(face_basis_type, "legendre") == 0)
     {
-      use_nodal_face_basis = false;
     }
     else
     {
@@ -366,11 +357,12 @@ int main(int argc, char *args[])
         std::cout << buffer << std::endl;
       }
     }
+  }
 
   for (unsigned p1 = (unsigned)p_1; p1 < (unsigned)p_2; ++p1)
   {
     Diffusion_0<2> diff0(
-      p1, PETSC_COMM_WORLD, size, rank, number_of_threads, Adaptive, use_nodal_face_basis);
+      p1, PETSC_COMM_WORLD, size, rank, number_of_threads, Adaptive, face_basis_type);
     for (unsigned h1 = (unsigned)h_1; h1 < (unsigned)h_2; ++h1)
     {
       diff0.Setup_System(h1);

@@ -15,10 +15,13 @@ class Poly_Basis : public Base_Template<Poly_Basis<dim, spacedim>, std::string>
   {
   }
 
-  virtual std::string get_type()
-  {
-    return "Polynomial basis type is not set.";
-  }
+  virtual std::string get_type() const = 0;
+
+  /*
+   * The function init is only called when we create the object with the empty
+   * constructor.
+   */
+  virtual void init(const std::vector<dealii::Point<dim>> &Points) = 0;
 
   virtual std::vector<double> value(const dealii::Point<dim> &P0) const = 0;
 

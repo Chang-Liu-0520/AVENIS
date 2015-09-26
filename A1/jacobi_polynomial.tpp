@@ -1,29 +1,43 @@
 #include <vector>
 #include "jacobi_polynomial.hpp"
 
-template <int dim, int spacedim>
-JacobiP<dim, spacedim>::JacobiP()
+template <int dim>
+JacobiP<dim>::JacobiP()
   : integral_sc_fac(sqrt(2.0))
 {
 }
 
-template <int dim, int spacedim>
-JacobiP<dim, spacedim>::JacobiP(const int &n_in,
-                                const double &alpha_in,
-                                const double &beta_in,
-                                const int domain_in)
+template <int dim>
+JacobiP<dim>::JacobiP(const int &n_in,
+                      const double &alpha_in,
+                      const double &beta_in,
+                      const int domain_in)
   : integral_sc_fac(sqrt(2.0)), n(n_in), alpha(alpha_in), beta(beta_in), domain(domain_in)
 {
 }
 
-template <int dim, int spacedim>
-inline double JacobiP<dim, spacedim>::change_coords(double x_inp) const
+/*
+ * This initializer is only required for empty constructor. When empty
+ * constructor is
+ * used, one has to set the values of alpha, beta and domain_type.
+ */
+template <int dim>
+void JacobiP<dim>::init(const std::vector<dealii::Point<dim>> &Supp_Points)
+{
+  alpha = 0;
+  beta = 0;
+  n = Supp_Points.size() - 1;
+  domain = From_0_to_1;
+}
+
+template <int dim>
+inline double JacobiP<dim>::change_coords(double x_inp) const
 {
   return (2L * x_inp - 1L);
 }
 
-template <int dim, int spacedim>
-std::vector<double> JacobiP<dim, spacedim>::value(double x) const
+template <int dim>
+std::vector<double> JacobiP<dim>::value(double x) const
 {
   std::vector<double> result = compute(x);
   if (domain & Domain::From_0_to_1)
@@ -34,8 +48,8 @@ std::vector<double> JacobiP<dim, spacedim>::value(double x) const
   return result;
 }
 
-template <int dim, int spacedim>
-std::vector<double> JacobiP<dim, spacedim>::derivative(double x) const
+template <int dim>
+std::vector<double> JacobiP<dim>::derivative(double x) const
 {
   std::vector<double> dP(n + 1);
 
@@ -65,8 +79,8 @@ std::vector<double> JacobiP<dim, spacedim>::derivative(double x) const
   return dP;
 }
 
-template <int dim, int spacedim>
-std::vector<double> JacobiP<dim, spacedim>::value(const dealii::Point<dim> &P0) const
+template <int dim>
+std::vector<double> JacobiP<dim>::value(const dealii::Point<dim> &P0) const
 {
   std::vector<double> result;
   result.reserve(pow(n + 1, dim));
@@ -97,9 +111,9 @@ std::vector<double> JacobiP<dim, spacedim>::value(const dealii::Point<dim> &P0) 
   return result;
 }
 
-template <int dim, int spacedim>
-std::vector<double> JacobiP<dim, spacedim>::value(const dealii::Point<dim> &P0,
-                                                  const unsigned half_range) const
+template <int dim>
+std::vector<double>
+JacobiP<dim>::value(const dealii::Point<dim> &P0, const unsigned half_range) const
 {
   assert(half_range <= pow(2, P0.dimension));
   std::vector<double> result;
@@ -147,9 +161,8 @@ std::vector<double> JacobiP<dim, spacedim>::value(const dealii::Point<dim> &P0,
   return result;
 }
 
-template <int dim, int spacedim>
-std::vector<dealii::Tensor<1, dim>>
-JacobiP<dim, spacedim>::grad(const dealii::Point<dim> &P0) const
+template <int dim>
+std::vector<dealii::Tensor<1, dim>> JacobiP<dim>::grad(const dealii::Point<dim> &P0) const
 {
   std::vector<dealii::Tensor<1, dim>> grad;
   grad.reserve(pow(n + 1, dim));
@@ -197,8 +210,8 @@ JacobiP<dim, spacedim>::grad(const dealii::Point<dim> &P0) const
   return grad;
 }
 
-template <int dim, int spacedim>
-std::vector<double> JacobiP<dim, spacedim>::compute(const double x_inp) const
+template <int dim>
+std::vector<double> JacobiP<dim>::compute(const double x_inp) const
 {
   /* The Jacobi polynomial is evaluated using a recursion formula.
    * x     : The input point which should be in -1 <= x <= 1
@@ -243,10 +256,16 @@ std::vector<double> JacobiP<dim, spacedim>::compute(const double x_inp) const
   return p;
 }
 
-template <int dim, int spacedim>
-JacobiP<dim, spacedim>::~JacobiP()
+template <int dim>
+JacobiP<dim>::~JacobiP()
 {
 }
 
-Derived_Factory<JacobiP<2, 2>, Poly_Basis<2, 2>, std::string>
-Poly_Factory("jacobi_2_2");
+Derived_Factory<JacobiP<1>, Poly_Basis<1, 1>, std::string>
+Poly_Factory_1D("legendre1");
+
+Derived_Factory<JacobiP<2>, Poly_Basis<2, 2>, std::string>
+Poly_Factory_2D("legendre2");
+
+Derived_Factory<JacobiP<3>, Poly_Basis<3, 3>, std::string>
+Poly_Factory_3D("legendre3");

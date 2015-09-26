@@ -7,7 +7,7 @@ Diffusion_0<dim>::Diffusion_0(const unsigned &order,
                               const unsigned &comm_rank_,
                               const unsigned &n_threads,
                               const bool &Adaptive_ON_,
-                              const bool &use_nodal_face_basis_)
+                              const std::string &face_basis_type_)
   : comm(comm_),
     comm_size(comm_size_),
     comm_rank(comm_rank_),
@@ -22,15 +22,16 @@ Diffusion_0<dim>::Diffusion_0(const unsigned &order,
     Elem_Mapping(),
     Gauss_Elem1(quad_order),
     Gauss_Face1(quad_order),
+    GaussLobatto_Face1(poly_order + 1),
     DG_Elem1(poly_order),
     DG_System1(DG_Elem1, 1 + dim),
     DoF_H_Refine(Grid1),
     DoF_H1_System(Grid1),
     Elem_Basis(Gauss_Elem1.get_points(), poly_order),
-    Face_Basis(Gauss_Face1.get_points(), poly_order),
+    Face_Basis(Gauss_Face1.get_points(), GaussLobatto_Face1.get_points(), face_basis_type_),
     refn_cycle(0),
     Adaptive_ON(Adaptive_ON_),
-    use_nodal_face_basis(use_nodal_face_basis_),
+    face_basis_type(face_basis_type_),
     n_threads(n_threads)
 {
   if (comm_rank == 0)
@@ -142,6 +143,9 @@ void Diffusion_0<dim>::CalculateMatrices(Cell_Class<dim> &cell,
   const unsigned n_polyfaces = pow(poly_order + 1, dim - 1);
 
   JacobiP<dim - 1> face_jacobi(poly_order, 0, 0, JacobiP<dim - 1>::From_0_to_1);
+  Poly_Basis<dim-1> face_basis;
+  face_basis->create(face_basis_type, face_basis);
+  face_basis->init(Supp_Points);
   std::vector<dealii::DerivativeForm<1, dim, dim>> D_Forms =
     cell.pCell_FEValues->get_inverse_jacobians();
   std::vector<dealii::Point<dim>> QPoints_Locs =
@@ -202,15 +206,11 @@ void Diffusion_0<dim>::CalculateMatrices(Cell_Class<dim> &cell,
       Nj_vec = Eigen::MatrixXd::Zero(dim * n_polys, dim);
       std::vector<double> N_valus = Jacobi_P.value(Projected_Face_Q_Points[i_Q_face]);
       std::vector<double> half_range_face_basis, face_basis;
-      if (use_nodal_face_basis)
-      {
-      }
-      else
-      {
-        face_basis = Face_Basis.bases[i_Q_face];
-        half_range_face_basis =
-          face_jacobi.value(Face_Q_Points[i_Q_face], cell.half_range_flag[i_face]);
-      }
+
+      face_basis = Face_Basis.bases[i_Q_face];
+      half_range_face_basis =
+        face_jacobi.value(Face_Q_Points[i_Q_face], cell.half_range_flag[i_face]);
+
       for (unsigned i_polyface = 0; i_polyface < n_polyfaces; ++i_polyface)
       {
         if (cell.half_range_flag[i_face] == 0)
@@ -403,10 +403,10 @@ void Diffusion_0<dim>::Assemble_Globals()
               cell.pFace_FEValues->get_normal_vectors();
             if (cell.half_range_flag[i_face] == 0)
               Face_Basis.Project_to_Basis(Neumann_BC_func,
-                                          FaceQ_Points_Loc,
-                                          Normal_Vec_Dir,
-                                          Face_Q_Weights,
-                                          gN_vec_face);
+                                           FaceQ_Points_Loc,
+                                           Normal_Vec_Dir,
+                                           Face_Q_Weights,
+                                           gN_vec_face);
             gN_vec.block(i_face * n_polyfaces, 0, n_polyfaces, 1) = gN_vec_face;
           }
         }
@@ -434,9 +434,9 @@ void Diffusion_0<dim>::Assemble_Globals()
           std::vector<dealii::Point<dim>> Face_Q_Points_Loc =
             cell.pFace_FEValues->get_quadrature_points();
           Face_Basis.Project_to_Basis(u_func,
-                                      Face_Q_Points_Loc,
-                                      Gauss_Face1.get_weights(),
-                                      face_exact_uhat_vec);
+                                       Face_Q_Points_Loc,
+                                       Gauss_Face1.get_weights(),
+                                       face_exact_uhat_vec);
           exact_uhat_vec.insert(exact_uhat_vec.end(),
                                 face_exact_uhat_vec.data(),
                                 face_exact_uhat_vec.data() +
