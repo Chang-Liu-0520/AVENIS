@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <unistd.h>
 #include <getopt.h>
+#include <memory>
 
 #include <mpi.h>
 #include <petscsys.h>
@@ -144,8 +145,6 @@ struct Diffusion_0
   dealii::DoFHandler<dim> DoF_H1_System;
   BasisFuncs<dim> Elem_Basis;
   BasisFuncs<dim - 1> Face_Basis;
-  std::vector<dealii::Point<dim>> Elem_Supp_Points;
-  std::vector<dealii::Point<dim - 1>> Face_Supp_Points;
   unsigned refn_cycle;
 
   kappa_inv_class<dim, Eigen::MatrixXd> kappa_inv;

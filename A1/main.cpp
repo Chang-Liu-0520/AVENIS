@@ -95,15 +95,15 @@ PetscErrorCode Diffusion_0<dim>::Solve_Linear_Systam()
   KSPCreate(comm, &TheSolver);
   KSPSetTolerances(TheSolver, 1E-8, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
   KSPSetOperators(TheSolver, global_mat, global_mat);
-  //  KSPSetType(TheSolver, KSPCG);
+  KSPSetType(TheSolver, KSPCG);
   KSPSetFromOptions(TheSolver);
 
   PC ThePreCond;
   KSPGetPC(TheSolver, &ThePreCond);
   PCSetFromOptions(ThePreCond);
-  //  PCSetType(ThePreCond, PCGAMG);
-  //  PCGAMGSetType(ThePreCond, PCGAMGAGG);
-  //  PCGAMGSetNSmooths(ThePreCond, 1);
+  PCSetType(ThePreCond, PCGAMG);
+  PCGAMGSetType(ThePreCond, PCGAMGAGG);
+  PCGAMGSetNSmooths(ThePreCond, 1);
 
   int num_iter;
   KSPSolve(TheSolver, RHS_vec, solution_vec);
@@ -201,6 +201,7 @@ void Diffusion_0<dim>::Setup_System(unsigned refinement)
                 refn_cycle);
   if (comm_rank == 0)
     Execution_Time << buffer << currentDateTime() << std::endl;
+
   Count_Globals();
   std::snprintf(buffer,
                 300,
@@ -288,7 +289,7 @@ int main(int argc, char *args[])
   PetscMPIInt rank, size;
   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
   MPI_Comm_size(PETSC_COMM_WORLD, &size);
-  dealii::multithread_info.set_thread_limit(1);
+  dealii::MultithreadInfo::set_thread_limit(1);
 
   int number_of_threads = 1;
 #ifdef _OPENMP
@@ -322,6 +323,7 @@ int main(int argc, char *args[])
 
   int p_1, p_2, h_1, h_2, found_options = 1;
   char face_basis_type[100];
+  strcpy(face_basis_type, "legendre");
   PetscBool found_option;
   int Adaptive = 0;
 
@@ -339,6 +341,7 @@ int main(int argc, char *args[])
   found_options = found_option && found_options;
   PetscBool face_basis_option_flag;
   PetscOptionsGetString(NULL, "-face_basis", face_basis_type, 100, &face_basis_option_flag);
+
   if (face_basis_option_flag == PETSC_TRUE)
   {
     if (strcmp(face_basis_type, "lagrange") == 0)
@@ -358,6 +361,12 @@ int main(int argc, char *args[])
       }
     }
   }
+
+  p_1 = 1;
+  p_2 = 2;
+  h_1 = 2;
+  h_2 = 8;
+  Adaptive = 0;
 
   for (unsigned p1 = (unsigned)p_1; p1 < (unsigned)p_2; ++p1)
   {

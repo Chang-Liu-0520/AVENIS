@@ -25,11 +25,11 @@ void Diffusion_0<dim>::Set_Boundary_Indicator()
       auto &&face = cell->face(i_face);
       if (face->at_boundary())
       {
-        face->set_boundary_indicator(Neumann_BC_Index);
+        face->set_boundary_id(Neumann_BC_Index);
         const dealii::Point<dim> &face_center = face->center();
         if (face_center(0) < -1.0 + 1.0E-10 || face_center(0) > 1.0 - 1.0E-10)
         {
-          face->set_boundary_indicator(Dirichlet_BC_Index);
+          face->set_boundary_id(Dirichlet_BC_Index);
         }
       }
     }
@@ -165,13 +165,13 @@ void Diffusion_0<dim>::Count_Globals()
          * and we do not bother to know what is going on, on the other
          * side of this face. Because (in the current version), that is
          * the way things are working ! */
-        if (face_i1->at_boundary() && face_i1->boundary_indicator() == Dirichlet_BC_Index)
+        if (face_i1->at_boundary() && face_i1->boundary_id() == Dirichlet_BC_Index)
         {
           cell.Face_ID_in_this_rank[i_face] = homogenous_dirichlet;
           cell.Face_ID_in_all_ranks[i_face] = homogenous_dirichlet;
           cell.BCs[i_face] = Cell_Class<dim>::Dirichlet;
         }
-        else if (face_i1->at_boundary() && face_i1->boundary_indicator() == Neumann_BC_Index)
+        else if (face_i1->at_boundary() && face_i1->boundary_id() == Neumann_BC_Index)
         {
           cell.Face_ID_in_this_rank[i_face] = local_face_id_on_this_rank;
           cell.Face_ID_in_all_ranks[i_face] = global_face_id_on_this_rank;
@@ -386,13 +386,13 @@ void Diffusion_0<dim>::Count_Globals()
          * and we do not bother to know what is going on, on the other
          * side of this face. Because (in the current version), that is
          * the way things are working ! */
-        if (face_i1->at_boundary() && face_i1->boundary_indicator() == Dirichlet_BC_Index)
+        if (face_i1->at_boundary() && face_i1->boundary_id() == Dirichlet_BC_Index)
         {
           ghost_cell.Face_ID_in_this_rank[i_face] = homogenous_dirichlet;
           ghost_cell.Face_ID_in_all_ranks[i_face] = homogenous_dirichlet;
           ghost_cell.BCs[i_face] = Cell_Class<dim>::Dirichlet;
         }
-        else if (face_i1->at_boundary() && face_i1->boundary_indicator() == Neumann_BC_Index)
+        else if (face_i1->at_boundary() && face_i1->boundary_id() == Neumann_BC_Index)
         {
           ghost_cell.Face_ID_in_this_rank[i_face] = ghost_face_counter;
           ghost_cell.Face_ID_in_all_ranks[i_face] = ghost_face_counter;

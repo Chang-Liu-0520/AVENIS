@@ -86,6 +86,7 @@ struct BasisFuncs
   {
     std::string basis_string = basis_type_ + std::to_string(dim);
     std::unique_ptr<Poly_Basis<dim>> basis;
+    std::cout << basis_string << std::endl;
     basis->create(basis_string, basis);
     basis->init(Supp_Points);
     for (unsigned i1 = 0; i1 < Intg_Points.size(); ++i1)

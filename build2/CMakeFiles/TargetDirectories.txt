@@ -1,8 +1,0 @@
-/workspace/Shared/All_Codes/deal_II/AVENIS/AVENIS/build2/CMakeFiles/A1.dir
-/workspace/Shared/All_Codes/deal_II/AVENIS/AVENIS/build2/CMakeFiles/debug.dir
-/workspace/Shared/All_Codes/deal_II/AVENIS/AVENIS/build2/CMakeFiles/distclean.dir
-/workspace/Shared/All_Codes/deal_II/AVENIS/AVENIS/build2/CMakeFiles/info.dir
-/workspace/Shared/All_Codes/deal_II/AVENIS/AVENIS/build2/CMakeFiles/release.dir
-/workspace/Shared/All_Codes/deal_II/AVENIS/AVENIS/build2/CMakeFiles/run.dir
-/workspace/Shared/All_Codes/deal_II/AVENIS/AVENIS/build2/CMakeFiles/runclean.dir
-/workspace/Shared/All_Codes/deal_II/AVENIS/AVENIS/build2/CMakeFiles/strip_comments.dir

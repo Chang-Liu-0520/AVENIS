@@ -142,10 +142,14 @@ void Diffusion_0<dim>::CalculateMatrices(Cell_Class<dim> &cell,
   const unsigned n_polys = pow(poly_order + 1, dim);
   const unsigned n_polyfaces = pow(poly_order + 1, dim - 1);
 
+  std::string basis_string = face_basis_type + std::to_string(dim - 1);
+  dealii::QGaussLobatto<dim - 1> Face_Supp_Point_GL(poly_order + 1);
+  std::vector<dealii::Point<dim - 1>> Face_Supp_Points =
+    Face_Supp_Point_GL.get_points();
   JacobiP<dim - 1> face_jacobi(poly_order, 0, 0, JacobiP<dim - 1>::From_0_to_1);
-  Poly_Basis<dim-1> face_basis;
-  face_basis->create(face_basis_type, face_basis);
-  face_basis->init(Supp_Points);
+  std::unique_ptr<Poly_Basis<dim - 1>> face_basis;
+  face_basis->create(basis_string, face_basis);
+  face_basis->init(Face_Supp_Points);
   std::vector<dealii::DerivativeForm<1, dim, dim>> D_Forms =
     cell.pCell_FEValues->get_inverse_jacobians();
   std::vector<dealii::Point<dim>> QPoints_Locs =
@@ -403,10 +407,10 @@ void Diffusion_0<dim>::Assemble_Globals()
               cell.pFace_FEValues->get_normal_vectors();
             if (cell.half_range_flag[i_face] == 0)
               Face_Basis.Project_to_Basis(Neumann_BC_func,
-                                           FaceQ_Points_Loc,
-                                           Normal_Vec_Dir,
-                                           Face_Q_Weights,
-                                           gN_vec_face);
+                                          FaceQ_Points_Loc,
+                                          Normal_Vec_Dir,
+                                          Face_Q_Weights,
+                                          gN_vec_face);
             gN_vec.block(i_face * n_polyfaces, 0, n_polyfaces, 1) = gN_vec_face;
           }
         }
@@ -434,9 +438,9 @@ void Diffusion_0<dim>::Assemble_Globals()
           std::vector<dealii::Point<dim>> Face_Q_Points_Loc =
             cell.pFace_FEValues->get_quadrature_points();
           Face_Basis.Project_to_Basis(u_func,
-                                       Face_Q_Points_Loc,
-                                       Gauss_Face1.get_weights(),
-                                       face_exact_uhat_vec);
+                                      Face_Q_Points_Loc,
+                                      Gauss_Face1.get_weights(),
+                                      face_exact_uhat_vec);
           exact_uhat_vec.insert(exact_uhat_vec.end(),
                                 face_exact_uhat_vec.data(),
                                 face_exact_uhat_vec.data() +
