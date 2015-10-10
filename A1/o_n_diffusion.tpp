@@ -123,7 +123,7 @@ void
 /**
  * In this function we calculate the matrices used in all other methods.
  * In this calculation we choose to use the nodal or modal basis for the faces
- * and modal basis for the elements.
+ * and elements.
  */
 template <int dim>
 void Diffusion_0<dim>::CalculateMatrices(Cell_Class<dim> &cell,
