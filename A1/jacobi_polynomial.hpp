@@ -1,74 +1,37 @@
-#include "poly_basis.hpp"
 #include <string>
 #include <vector>
-#include <deal.II/base/tensor.h>
 #include <cmath>
 
 #ifndef Jacobi_Polynomials
 #define Jacobi_Polynomials
+#include "poly_basis.hpp"
 
 template <int dim>
-class JacobiP : public Poly_Basis<dim>
+class Jacobi_Poly_Basis //: public Poly_Basis<Jacobi_Poly_Basis<dim>, dim>
 {
  public:
-  JacobiP();
-  JacobiP(const JacobiP &) = delete;
-  JacobiP &operator=(const JacobiP &) = delete;
-  JacobiP(const int &, const double &, const double &, const int);
-  ~JacobiP();
+  Jacobi_Poly_Basis() = delete;
+  Jacobi_Poly_Basis(const std::vector<dealii::Point<1>> &Supp_Points, const int &domain_);
+  Jacobi_Poly_Basis(const unsigned &polyspace_order_,
+                    const double &alpha_,
+                    const double &beta_,
+                    const int &domain_);
+  ~Jacobi_Poly_Basis();
 
-  void init(const std::vector<dealii::Point<dim>> &Supp_Points);
-
-  std::string get_type() const
-  {
-    return "Using Legendre polynomials.";
-  }
-
-  std::vector<double> value(double) const;
-  std::vector<double> derivative(double) const;
-
-  std::vector<double> value(const dealii::Point<dim> &P0) const;
-
-  /*
-   * This function gives you the values of half-range basis functions, which
-   * will be used in the adaptive meshing. The approach is to give the basis
-   * corresponding to the unrefined element neghboring current element. For
-   * example consider point x on the edge of element 1, instead of giving the
-   * value of bases corresponding to element 1, we will give the value of
-   *basis
-   * functions of the element 0.
-   *
-   *               |   0   |
-   *               |_______|
-   *
-   *               |\
-   *               | *  <------  we will give this value !
-   *               |  \
-   *               |-x-\---|
-   *                    \  |
-   *                     \ |
-   *                      \|
-   *
-   *               |---|---|
-   *               | 1 | 2 |
-   */
+  std::vector<double> value(const dealii::Point<dim, double> &P0);
   std::vector<double>
-  value(const dealii::Point<dim> &P0, const unsigned half_range) const;
-  std::vector<dealii::Tensor<1, dim>> grad(const dealii::Point<dim> &P0) const;
-
-  enum Domain
-  {
-    From_0_to_1 = 1 << 0,
-    From_minus_1_to_1 = 1 << 1
-  };
+   value(const dealii::Point<dim, double> &P0, const unsigned &half_range);
+  std::vector<dealii::Tensor<1, dim>> grad(const dealii::Point<dim, double> &P0);
+  std::vector<double> value(const double &);
+  std::vector<double> derivative(const double &);
 
  private:
   const double integral_sc_fac;
-  unsigned int n;
+  unsigned int polyspace_order;
   double alpha, beta;
   int domain;
-  std::vector<double> compute(const double x_inp) const;
-  inline double change_coords(double x_inp) const;
+  std::vector<double> compute(const double &x_inp);
+  inline double change_coords(const double &x_inp);
 };
 
 #include "jacobi_polynomial.tpp"

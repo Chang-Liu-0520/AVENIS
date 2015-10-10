@@ -96,6 +96,10 @@ struct Diffusion_0
 {
   static const unsigned n_faces_per_cell = dealii::GeometryInfo<dim>::faces_per_cell;
   typedef typename Cell_Class<dim>::dealii_Cell_Type Cell_Type;
+  //  typedef Jacobi_Poly_Basis<dim> elem_basis_type;
+  //  typedef Jacobi_Poly_Basis<dim - 1> face_basis_type;
+  typedef Lagrange_Polys<dim> elem_basis_type;
+  typedef Lagrange_Polys<dim - 1> face_basis_type;
 
   /**
    * @brief Diffusion_0: The constructor of the main class of the program.
@@ -114,8 +118,7 @@ struct Diffusion_0
               const unsigned &comm_size_,
               const unsigned &comm_rank_,
               const unsigned &n_threads,
-              const bool &Adaptive_ON_,
-              const std::string &face_basis_type_);
+              const bool &Adaptive_ON_);
   ~Diffusion_0();
 
   void FreeUpContainers();
@@ -136,15 +139,17 @@ struct Diffusion_0
   const unsigned n_trace_unknowns;
   dealii::parallel::distributed::Triangulation<dim> Grid1;
   dealii::MappingQ1<dim> Elem_Mapping;
-  dealii::QGauss<dim> Gauss_Elem1;
-  dealii::QGauss<dim - 1> Gauss_Face1;
-  dealii::QGaussLobatto<dim - 1> GaussLobatto_Face1;
+  dealii::QGauss<dim> elem_integration_points;
+  dealii::QGauss<dim - 1> face_integration_points;
+  dealii::QGaussLobatto<1> LGL_quad_1D;
+  const std::vector<dealii::Point<1>> support_points_1D;
   dealii::FE_DGQ<dim> DG_Elem1;
   dealii::FESystem<dim> DG_System1;
   dealii::DoFHandler<dim> DoF_H_Refine;
   dealii::DoFHandler<dim> DoF_H1_System;
-  BasisFuncs<dim> Elem_Basis;
-  BasisFuncs<dim - 1> Face_Basis;
+
+  BasisIntegrator_Matrix<dim, elem_basis_type> Elem_Basis;
+  BasisIntegrator_Matrix<dim - 1, face_basis_type> Face_Basis;
   unsigned refn_cycle;
 
   kappa_inv_class<dim, Eigen::MatrixXd> kappa_inv;
@@ -159,7 +164,6 @@ struct Diffusion_0
   const int Dirichlet_BC_Index = 1;
   const int Neumann_BC_Index = 2;
   const bool Adaptive_ON = true;
-  const std::string face_basis_type;
   void Init_Mesh_Containers();
   void Count_Globals();
   void Assemble_Globals();
@@ -174,34 +178,24 @@ struct Diffusion_0
                             double &Error_q,
                             double &Error_div_q);
 
-  template <typename T>
   void CalculateMatrices(Cell_Class<dim> &cell,
-                         const JacobiP<dim> &Jacobi_P,
-                         T &A,
-                         T &B,
-                         T &C,
-                         T &D,
-                         T &E,
-                         T &H,
-                         T &H2,
-                         T &M);
+                         Poly_Basis<elem_basis_type, dim> &the_elem_basis);
 
   template <typename T>
-  void Calculate_Postprocess_Matrices(Cell_Class<dim> &cell,
-                                      const BasisFuncs<dim> &PostProcess_Elem_Basis,
-                                      T &DM_star,
-                                      T &DB2);
+  void Calculate_Postprocess_Matrices(
+   Cell_Class<dim> &cell,
+   const BasisIntegrator_Matrix<dim, elem_basis_type> &PostProcess_Elem_Basis,
+   T &DM_star,
+   T &DB2);
 
   template <typename T1>
   void PostProcess(Cell_Class<dim> &cell,
-                   const BasisFuncs<dim> &PostProcess_Elem_Basis,
+                   const BasisIntegrator_Matrix<dim, elem_basis_type> &PostProcess_Elem_Basis,
                    const T1 &u,
                    const T1 &q,
                    T1 &ustar,
                    const T1 &PostProcess_Mode_to_Node_Matrix,
-                   double &error_ustar,
-                   double &error_qstar,
-                   double &error_div_qstar);
+                   double &error_ustar);
 
   template <typename T>
   void uhat_u_q_to_jth_col(const T &C,
@@ -228,7 +222,7 @@ struct Diffusion_0
 
   template <typename T, typename U>
   void q_from_u_uhat(
-    const U &LDLT_of_A, const T &B, const T &C, const T &uhat, const T &u, T &q);
+   const U &LDLT_of_A, const T &B, const T &C, const T &uhat, const T &u, T &q);
 
   void Compute_Error(const Function<dim, double> &func,
                      const std::vector<dealii::Point<dim>> &points_loc,

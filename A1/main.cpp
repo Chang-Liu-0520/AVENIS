@@ -238,10 +238,10 @@ void parse_my_options(const int &rank,
                                           { "h_n", required_argument, 0, 'l' },
                                           { 0, 0, 0, 0 } };
 
-  p_1 = 1;
-  p_2 = 2;
-  h_1 = 1;
-  h_2 = 2;
+  //  p_1 = 3;
+  //  p_2 = 4;
+  //  h_1 = 2;
+  //  h_2 = 8;
   int long_index = 0;
   int opt = 0;
   opterr = 0;
@@ -362,16 +362,16 @@ int main(int argc, char *args[])
     }
   }
 
-  p_1 = 1;
-  p_2 = 2;
+  p_1 = 3;
+  p_2 = 4;
   h_1 = 2;
   h_2 = 8;
   Adaptive = 0;
+  const int dim = 2;
 
   for (unsigned p1 = (unsigned)p_1; p1 < (unsigned)p_2; ++p1)
   {
-    Diffusion_0<2> diff0(
-      p1, PETSC_COMM_WORLD, size, rank, number_of_threads, Adaptive, face_basis_type);
+    Diffusion_0<dim> diff0(p1, PETSC_COMM_WORLD, size, rank, number_of_threads, Adaptive);
     for (unsigned h1 = (unsigned)h_1; h1 < (unsigned)h_2; ++h1)
     {
       diff0.Setup_System(h1);

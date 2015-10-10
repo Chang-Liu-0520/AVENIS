@@ -26,6 +26,7 @@ void Diffusion_0<dim>::Set_Boundary_Indicator()
       if (face->at_boundary())
       {
         face->set_boundary_id(Neumann_BC_Index);
+        //        face->set_boundary_id(Dirichlet_BC_Index);
         const dealii::Point<dim> &face_center = face->center();
         if (face_center(0) < -1.0 + 1.0E-10 || face_center(0) > 1.0 - 1.0E-10)
         {
@@ -59,7 +60,7 @@ void Diffusion_0<dim>::Refine_Grid(int n)
                                                estimated_error_per_cell);
 
     dealii::parallel::distributed::GridRefinement::refine_and_coarsen_fixed_number(
-      Grid1, estimated_error_per_cell, 0.3, 0.03);
+     Grid1, estimated_error_per_cell, 0.3, 0.03);
     Grid1.execute_coarsening_and_refinement();
     ++refn_cycle;
   }
@@ -220,7 +221,7 @@ void Diffusion_0<dim>::Count_Globals()
                  ++i_nb_subface)
             {
               const Cell_Type &nb_of_nb_i1 =
-                nb_i1->neighbor_child_on_subface(face_nb_num, i_nb_subface);
+               nb_i1->neighbor_child_on_subface(face_nb_num, i_nb_subface);
               if (nb_of_nb_i1->subdomain_id() == comm_rank)
               {
                 std::stringstream nb_of_nb_ss_id;
@@ -229,11 +230,11 @@ void Diffusion_0<dim>::Count_Globals()
                 assert(cell_ID_to_num.find(nb_of_nb_str_id) != cell_ID_to_num.end());
                 unsigned nb_of_nb_num = cell_ID_to_num[nb_of_nb_str_id];
                 All_Owned_Cells[nb_of_nb_num].Face_ID_in_this_rank[nb_face_of_nb_num] =
-                  local_face_id_on_this_rank;
+                 local_face_id_on_this_rank;
                 All_Owned_Cells[nb_of_nb_num].half_range_flag[nb_face_of_nb_num] =
-                  i_nb_subface + 1;
+                 i_nb_subface + 1;
                 All_Owned_Cells[nb_of_nb_num].face_owner_rank[nb_face_of_nb_num] =
-                  nb_i1->subdomain_id();
+                 nb_i1->subdomain_id();
                 face_to_rank_recver[nb_i1->subdomain_id()]++;
                 if (!is_there_a_msg_from_rank[nb_i1->subdomain_id()])
                   is_there_a_msg_from_rank[nb_i1->subdomain_id()] = true;
@@ -252,7 +253,7 @@ void Diffusion_0<dim>::Count_Globals()
                  ++i_subface)
             {
               Cell_Type &&nb_i1 =
-                cell.dealii_Cell->neighbor_child_on_subface(i_face, i_subface);
+               cell.dealii_Cell->neighbor_child_on_subface(i_face, i_subface);
               int face_nb_i1 = cell.dealii_Cell->neighbor_face_no(i_face);
               std::stringstream nb_ss_id;
               nb_ss_id << nb_i1->id();
@@ -262,11 +263,11 @@ void Diffusion_0<dim>::Count_Globals()
                 assert(cell_ID_to_num.find(nb_str_id) != cell_ID_to_num.end());
                 int nb_i1_num = cell_ID_to_num[nb_str_id];
                 All_Owned_Cells[nb_i1_num].Face_ID_in_this_rank[face_nb_i1] =
-                  local_face_id_on_this_rank;
+                 local_face_id_on_this_rank;
                 All_Owned_Cells[nb_i1_num].half_range_flag[face_nb_i1] =
-                  i_subface + 1;
+                 i_subface + 1;
                 All_Owned_Cells[nb_i1_num].Face_ID_in_all_ranks[face_nb_i1] =
-                  global_face_id_on_this_rank;
+                 global_face_id_on_this_rank;
                 All_Owned_Cells[nb_i1_num].face_owner_rank[face_nb_i1] = comm_rank;
               }
               else
@@ -280,11 +281,11 @@ void Diffusion_0<dim>::Count_Globals()
                 assert(Ghost_ID_to_num.find(nb_str_id) != Ghost_ID_to_num.end());
                 unsigned nb_i1_num = Ghost_ID_to_num[nb_str_id];
                 All_Ghost_Cells[nb_i1_num].Face_ID_in_this_rank[face_nb_i1] =
-                  local_face_id_on_this_rank;
+                 local_face_id_on_this_rank;
                 All_Ghost_Cells[nb_i1_num].half_range_flag[face_nb_i1] =
-                  i_subface + 1;
+                 i_subface + 1;
                 All_Ghost_Cells[nb_i1_num].Face_ID_in_all_ranks[face_nb_i1] =
-                  global_face_id_on_this_rank;
+                 global_face_id_on_this_rank;
                 All_Ghost_Cells[nb_i1_num].face_owner_rank[face_nb_i1] = comm_rank;
                 /* Now we send id, face id, subface id, and neighbor face number
                  * to the corresponding rank. */
@@ -319,10 +320,10 @@ void Diffusion_0<dim>::Count_Globals()
               cell.Face_ID_in_all_ranks[i_face] = global_face_id_on_this_rank;
               cell.face_owner_rank[i_face] = comm_rank;
               All_Owned_Cells[nb_i1_num].Face_ID_in_this_rank[face_nb_i1] =
-                local_face_id_on_this_rank;
+               local_face_id_on_this_rank;
               All_Owned_Cells[nb_i1_num].half_range_flag[face_nb_i1] = 0;
               All_Owned_Cells[nb_i1_num].Face_ID_in_all_ranks[face_nb_i1] =
-                global_face_id_on_this_rank;
+               global_face_id_on_this_rank;
               All_Owned_Cells[nb_i1_num].face_owner_rank[face_nb_i1] = comm_rank;
               ++global_face_id_on_this_rank;
             }
@@ -337,10 +338,10 @@ void Diffusion_0<dim>::Count_Globals()
                 assert(Ghost_ID_to_num.find(nb_str_id) != Ghost_ID_to_num.end());
                 unsigned nb_i1_num = Ghost_ID_to_num[nb_str_id];
                 All_Ghost_Cells[nb_i1_num].Face_ID_in_this_rank[face_nb_i1] =
-                  local_face_id_on_this_rank;
+                 local_face_id_on_this_rank;
                 All_Ghost_Cells[nb_i1_num].half_range_flag[face_nb_i1] = 0;
                 All_Ghost_Cells[nb_i1_num].Face_ID_in_all_ranks[face_nb_i1] =
-                  global_face_id_on_this_rank;
+                 global_face_id_on_this_rank;
                 All_Ghost_Cells[nb_i1_num].face_owner_rank[face_nb_i1] = comm_rank;
                 /* Now we send id, face id, subface(=0), and neighbor face
                  * number to the corresponding rank. */
@@ -418,7 +419,7 @@ void Diffusion_0<dim>::Count_Globals()
                  ++i_subface)
             {
               Cell_Type &&nb_subface =
-                ghost_cell.dealii_Cell->neighbor_child_on_subface(i_face, i_subface);
+               ghost_cell.dealii_Cell->neighbor_child_on_subface(i_face, i_subface);
               if (nb_subface->is_ghost())
               {
                 std::stringstream nb_ss_id;
@@ -427,17 +428,17 @@ void Diffusion_0<dim>::Count_Globals()
                 assert(Ghost_ID_to_num.find(nb_str_id) != Ghost_ID_to_num.end());
                 int nb_subface_num = Ghost_ID_to_num[nb_str_id];
                 assert(All_Ghost_Cells[nb_subface_num]
-                         .Face_ID_in_this_rank[face_nb_subface] == -2);
+                        .Face_ID_in_this_rank[face_nb_subface] == -2);
                 assert(All_Ghost_Cells[nb_subface_num]
-                         .Face_ID_in_all_ranks[face_nb_subface] == -2);
+                        .Face_ID_in_all_ranks[face_nb_subface] == -2);
                 All_Ghost_Cells[nb_subface_num]
-                  .Face_ID_in_this_rank[face_nb_subface] = ghost_face_counter;
+                 .Face_ID_in_this_rank[face_nb_subface] = ghost_face_counter;
                 All_Ghost_Cells[nb_subface_num]
-                  .Face_ID_in_all_ranks[face_nb_subface] = ghost_face_counter;
+                 .Face_ID_in_all_ranks[face_nb_subface] = ghost_face_counter;
                 All_Ghost_Cells[nb_subface_num].half_range_flag[face_nb_subface] =
-                  i_subface + 1;
+                 i_subface + 1;
                 All_Ghost_Cells[nb_subface_num].face_owner_rank[face_nb_subface] =
-                  nb_subface->subdomain_id();
+                 nb_subface->subdomain_id();
               }
             }
           }
@@ -453,12 +454,12 @@ void Diffusion_0<dim>::Count_Globals()
             assert(All_Ghost_Cells[nb_i1_num].Face_ID_in_this_rank[face_nb_i1] == -2);
             assert(All_Ghost_Cells[nb_i1_num].Face_ID_in_all_ranks[face_nb_i1] == -2);
             All_Ghost_Cells[nb_i1_num].Face_ID_in_this_rank[face_nb_i1] =
-              ghost_face_counter;
+             ghost_face_counter;
             All_Ghost_Cells[nb_i1_num].Face_ID_in_all_ranks[face_nb_i1] =
-              ghost_face_counter;
+             ghost_face_counter;
             All_Ghost_Cells[nb_i1_num].half_range_flag[face_nb_i1] = 0;
             All_Ghost_Cells[nb_i1_num].face_owner_rank[face_nb_i1] =
-              nb_i1->subdomain_id();
+             nb_i1->subdomain_id();
           }
           --ghost_face_counter;
         }
@@ -577,7 +578,7 @@ void Diffusion_0<dim>::Count_Globals()
         unsigned face_num = std::stoi(tokens[1]);
         assert(All_Owned_Cells[cell_number].Face_ID_in_all_ranks[face_num] == -2);
         All_Owned_Cells[cell_number].Face_ID_in_all_ranks[face_num] =
-          std::stoi(tokens[3]) + face_count_before_rank[i_recv->first];
+         std::stoi(tokens[3]) + face_count_before_rank[i_recv->first];
         ++recv_counter;
       }
       i_recv->second = false;
@@ -659,7 +660,7 @@ void Diffusion_0<dim>::Count_Globals()
         unsigned face_num = std::stoi(tokens[1]);
         assert(All_Owned_Cells[cell_number].Face_ID_in_all_ranks[face_num] == -2);
         All_Owned_Cells[cell_number].Face_ID_in_all_ranks[face_num] =
-          std::stoi(tokens[3]) + face_count_before_rank[i_recv->first];
+         std::stoi(tokens[3]) + face_count_before_rank[i_recv->first];
         ++recv_counter;
       }
       i_recv->second = false;
@@ -687,7 +688,7 @@ void Diffusion_0<dim>::Count_Globals()
     for (unsigned i1 = 0; i1 < cell_it->n_faces; ++i1)
     {
       int face_i1 =
-        cell_it->Face_ID_in_all_ranks[i1] - face_count_before_rank[comm_rank];
+       cell_it->Face_ID_in_all_ranks[i1] - face_count_before_rank[comm_rank];
       if (cell_it->face_owner_rank[i1] == comm_rank)
       {
         All_Faces[face_i1].Parent_Cells.push_back(cell_it);
@@ -697,7 +698,7 @@ void Diffusion_0<dim>::Count_Globals()
   }
 
   for (typename Cell_Class<dim>::vec_iterator_type ghost_cell_it =
-         All_Ghost_Cells.begin();
+        All_Ghost_Cells.begin();
        ghost_cell_it != All_Ghost_Cells.end();
        ++ghost_cell_it)
   {
@@ -779,9 +780,9 @@ void Diffusion_0<dim>::Count_Globals()
     for (unsigned DOF_on_face = 0; DOF_on_face < face.num_global_DOFs; ++DOF_on_face)
     {
       n_local_DOFs_connected_to_DOF[DOF_Counter1 + DOF_on_face] +=
-        face.n_local_connected_DOFs;
+       face.n_local_connected_DOFs;
       n_nonlocal_DOFs_connected_to_DOF[DOF_Counter1 + DOF_on_face] +=
-        face.n_nonlocal_connected_DOFs;
+       face.n_nonlocal_connected_DOFs;
     }
     DOF_Counter1 += face.num_global_DOFs;
   }
@@ -846,20 +847,20 @@ void Diffusion_0<dim>::Write_Grid_Out()
 {
   dealii::GridOut Grid1_Out;
   dealii::GridOutFlags::Svg svg_flags(
-    1,                                       // line_thickness = 2,
-    2,                                       // boundary_line_thickness = 4,
-    false,                                   // margin = true,
-    dealii::GridOutFlags::Svg::transparent,  // background = white,
-    0,                                       // azimuth_angle = 0,
-    0,                                       // polar_angle = 0,
-    dealii::GridOutFlags::Svg::subdomain_id, // coloring = level_number,
-    false, // convert_level_number_to_height = false,
-    false, // label_level_number = true,
-    true,  // label_cell_index = true,
-    false, // label_material_id = false,
-    false, // label_subdomain_id = false,
-    true,  // draw_colorbar = true,
-    true); // draw_legend = true
+   1,                                       // line_thickness = 2,
+   2,                                       // boundary_line_thickness = 4,
+   false,                                   // margin = true,
+   dealii::GridOutFlags::Svg::transparent,  // background = white,
+   0,                                       // azimuth_angle = 0,
+   0,                                       // polar_angle = 0,
+   dealii::GridOutFlags::Svg::subdomain_id, // coloring = level_number,
+   false, // convert_level_number_to_height = false,
+   false, // label_level_number = true,
+   true,  // label_cell_index = true,
+   false, // label_material_id = false,
+   false, // label_subdomain_id = false,
+   true,  // draw_colorbar = true,
+   true); // draw_legend = true
   Grid1_Out.set_flags(svg_flags);
   if (dim == 2)
   {

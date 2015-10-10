@@ -10,6 +10,7 @@ struct kappa_inv_class : public Function<dim, T>
 {
   virtual T value(const dealii::Point<dim> &x, const dealii::Point<dim> &n) const
   {
+    n *n;
     Eigen::Matrix2d kappa_inv_;
     kappa_inv_ << 1.0 / exp(x[0] + x[1]), 0.0, 0.0, 1.0 / exp(x[0] - x[1]);
 
@@ -84,6 +85,7 @@ struct u_func_class : public Function<dim, T>
 {
   virtual T value(const dealii::Point<dim> &x, const dealii::Point<dim> &n) const
   {
+    n *n;
     double u_func = 0;
     if (dim == 2)
       u_func = sin(M_PI * x[0]) * cos(M_PI * x[1]);
@@ -98,6 +100,7 @@ struct q_func_class : public Function<dim, T>
 {
   virtual T value(const dealii::Point<dim> &x, const dealii::Point<dim> &n) const
   {
+    n *n;
     dealii::Tensor<1, dim> q_func;
     if (dim == 2)
     {
@@ -120,6 +123,7 @@ struct divq_func_class : public Function<dim, T>
 {
   virtual T value(const dealii::Point<dim> &x, const dealii::Point<dim> &n) const
   {
+    n *n;
     if (dim == 3)
       return 3 * M_PI * M_PI * sin(M_PI * x[0]) * cos(M_PI * x[1]) * sin(M_PI * x[2]);
     return 2 * M_PI * M_PI * sin(M_PI * x(0)) * cos(M_PI * x(1));
@@ -131,15 +135,16 @@ struct f_func_class : public Function<dim, T>
 {
   virtual T value(const dealii::Point<dim> &x, const dealii::Point<dim> &n) const
   {
+    n *n;
     double f_func = 0;
     if (dim == 2)
       f_func = M_PI * M_PI * sin(M_PI * x[0]) * cos(M_PI * x[1]) *
-                 (exp(x[0] + x[1]) + exp(x[0] - x[1])) -
+                (exp(x[0] + x[1]) + exp(x[0] - x[1])) -
                M_PI * exp(x[0] + x[1]) * cos(M_PI * x[0]) * cos(M_PI * x[1]) -
                M_PI * exp(x[0] - x[1]) * sin(M_PI * x[0]) * sin(M_PI * x[1]);
     if (dim == 3)
       f_func =
-        3 * M_PI * M_PI * sin(M_PI * x[0]) * cos(M_PI * x[1]) * sin(M_PI * x[2]);
+       3 * M_PI * M_PI * sin(M_PI * x[0]) * cos(M_PI * x[1]) * sin(M_PI * x[2]);
 
     //    f_func = 0;
 
@@ -153,6 +158,7 @@ struct Dirichlet_BC_func_class : public Function<dim, T>
   u_func_class<dim, T> u_func;
   virtual T value(const dealii::Point<dim> &x, const dealii::Point<dim> &n) const
   {
+    n *n;
     double gD;
     gD = 0;
     if (x[0] < -1 + 1E-10)

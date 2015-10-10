@@ -1,43 +1,36 @@
-#include <vector>
 #include "jacobi_polynomial.hpp"
 
 template <int dim>
-JacobiP<dim>::JacobiP()
-  : integral_sc_fac(sqrt(2.0))
-{
-}
-
-template <int dim>
-JacobiP<dim>::JacobiP(const int &n_in,
-                      const double &alpha_in,
-                      const double &beta_in,
-                      const int domain_in)
-  : integral_sc_fac(sqrt(2.0)), n(n_in), alpha(alpha_in), beta(beta_in), domain(domain_in)
-{
-}
-
-/*
- * This initializer is only required for empty constructor. When empty
- * constructor is
- * used, one has to set the values of alpha, beta and domain_type.
- */
-template <int dim>
-void JacobiP<dim>::init(const std::vector<dealii::Point<dim>> &Supp_Points)
+Jacobi_Poly_Basis<dim>::Jacobi_Poly_Basis(const std::vector<dealii::Point<1>> &Supp_Points,
+                                          const int &domain_)
+  : integral_sc_fac(sqrt(2.0)), domain(domain_)
 {
   alpha = 0;
   beta = 0;
-  n = Supp_Points.size() - 1;
-  domain = From_0_to_1;
+  polyspace_order = Supp_Points.size() - 1;
 }
 
 template <int dim>
-inline double JacobiP<dim>::change_coords(double x_inp) const
+Jacobi_Poly_Basis<dim>::Jacobi_Poly_Basis(const unsigned &polyspace_order_,
+                                          const double &alpha_,
+                                          const double &beta_,
+                                          const int &domain_)
+  : integral_sc_fac(sqrt(2.0)),
+    polyspace_order(polyspace_order_),
+    alpha(alpha_),
+    beta(beta_),
+    domain(domain_)
+{
+}
+
+template <int dim>
+inline double Jacobi_Poly_Basis<dim>::change_coords(const double &x_inp)
 {
   return (2L * x_inp - 1L);
 }
 
 template <int dim>
-std::vector<double> JacobiP<dim>::value(double x) const
+std::vector<double> Jacobi_Poly_Basis<dim>::value(const double &x)
 {
   std::vector<double> result = compute(x);
   if (domain & Domain::From_0_to_1)
@@ -49,20 +42,20 @@ std::vector<double> JacobiP<dim>::value(double x) const
 }
 
 template <int dim>
-std::vector<double> JacobiP<dim>::derivative(double x) const
+std::vector<double> Jacobi_Poly_Basis<dim>::derivative(const double &x)
 {
-  std::vector<double> dP(n + 1);
+  std::vector<double> dP(polyspace_order + 1);
 
-  if (n == 0)
+  if (polyspace_order == 0)
   {
     dP[0] = 0.0;
   }
 
   else
   {
-    JacobiP JP0(n - 1, alpha + 1, beta + 1, domain);
+    Jacobi_Poly_Basis JP0(polyspace_order - 1, alpha + 1, beta + 1, domain);
     std::vector<double> P = JP0.compute(x);
-    for (unsigned n1 = 0; n1 < n + 1; ++n1)
+    for (unsigned n1 = 0; n1 < polyspace_order + 1; ++n1)
     {
       if (n1 == 0)
       {
@@ -80,10 +73,10 @@ std::vector<double> JacobiP<dim>::derivative(double x) const
 }
 
 template <int dim>
-std::vector<double> JacobiP<dim>::value(const dealii::Point<dim> &P0) const
+std::vector<double> Jacobi_Poly_Basis<dim>::value(const dealii::Point<dim, double> &P0)
 {
   std::vector<double> result;
-  result.reserve(pow(n + 1, dim));
+  result.reserve(pow(polyspace_order + 1, dim));
 
   std::vector<std::vector<double>> one_D_values;
   for (unsigned i1 = 0; i1 < dim; i1++)
@@ -92,18 +85,18 @@ std::vector<double> JacobiP<dim>::value(const dealii::Point<dim> &P0) const
   switch (dim)
   {
   case 1:
-    for (unsigned i1 = 0; i1 < n + 1; ++i1)
+    for (unsigned i1 = 0; i1 < polyspace_order + 1; ++i1)
       result.push_back(one_D_values[0][i1]);
     break;
   case 2:
-    for (unsigned i2 = 0; i2 < n + 1; ++i2)
-      for (unsigned i1 = 0; i1 < n + 1; ++i1)
+    for (unsigned i2 = 0; i2 < polyspace_order + 1; ++i2)
+      for (unsigned i1 = 0; i1 < polyspace_order + 1; ++i1)
         result.push_back(one_D_values[0][i1] * one_D_values[1][i2]);
     break;
   case 3:
-    for (unsigned i3 = 0; i3 < n + 1; ++i3)
-      for (unsigned i2 = 0; i2 < n + 1; ++i2)
-        for (unsigned i1 = 0; i1 < n + 1; ++i1)
+    for (unsigned i3 = 0; i3 < polyspace_order + 1; ++i3)
+      for (unsigned i2 = 0; i2 < polyspace_order + 1; ++i2)
+        for (unsigned i1 = 0; i1 < polyspace_order + 1; ++i1)
           result.push_back(one_D_values[0][i1] * one_D_values[1][i2] *
                            one_D_values[2][i3]);
     break;
@@ -112,8 +105,8 @@ std::vector<double> JacobiP<dim>::value(const dealii::Point<dim> &P0) const
 }
 
 template <int dim>
-std::vector<double>
-JacobiP<dim>::value(const dealii::Point<dim> &P0, const unsigned half_range) const
+std::vector<double> Jacobi_Poly_Basis<dim>::value(const dealii::Point<dim, double> &P0,
+                                                  const unsigned &half_range)
 {
   assert(half_range <= pow(2, P0.dimension));
   std::vector<double> result;
@@ -125,12 +118,12 @@ JacobiP<dim>::value(const dealii::Point<dim> &P0, const unsigned half_range) con
     {
       if (half_range == 1)
       {
-        dealii::Point<dim> P0_mod(P0(0) / 2.0);
+        dealii::Point<dim, double> P0_mod(P0(0) / 2.0);
         result = value(P0_mod);
       }
       if (half_range == 2)
       {
-        dealii::Point<dim> P0_mod(0.5 + P0(0) / 2.0);
+        dealii::Point<dim, double> P0_mod(0.5 + P0(0) / 2.0);
         result = value(P0_mod);
       }
     }
@@ -138,22 +131,22 @@ JacobiP<dim>::value(const dealii::Point<dim> &P0, const unsigned half_range) con
     {
       if (half_range == 1)
       {
-        dealii::Point<dim> P0_mod(P0(0) / 2.0, P0(1) / 2.0);
+        dealii::Point<dim, double> P0_mod(P0(0) / 2.0, P0(1) / 2.0);
         result = value(P0_mod);
       }
       if (half_range == 2)
       {
-        dealii::Point<dim> P0_mod(0.5 + P0(0) / 2.0, P0(1) / 2.0);
+        dealii::Point<dim, double> P0_mod(0.5 + P0(0) / 2.0, P0(1) / 2.0);
         result = value(P0_mod);
       }
       if (half_range == 3)
       {
-        dealii::Point<dim> P0_mod(P0(0) / 2.0, 0.5 + P0(1) / 2.0);
+        dealii::Point<dim, double> P0_mod(P0(0) / 2.0, 0.5 + P0(1) / 2.0);
         result = value(P0_mod);
       }
       if (half_range == 4)
       {
-        dealii::Point<dim> P0_mod(0.5 + P0(0) / 2.0, 0.5 + P0(1) / 2.0);
+        dealii::Point<dim, double> P0_mod(0.5 + P0(0) / 2.0, 0.5 + P0(1) / 2.0);
         result = value(P0_mod);
       }
     }
@@ -162,10 +155,11 @@ JacobiP<dim>::value(const dealii::Point<dim> &P0, const unsigned half_range) con
 }
 
 template <int dim>
-std::vector<dealii::Tensor<1, dim>> JacobiP<dim>::grad(const dealii::Point<dim> &P0) const
+std::vector<dealii::Tensor<1, dim>>
+ Jacobi_Poly_Basis<dim>::grad(const dealii::Point<dim, double> &P0)
 {
   std::vector<dealii::Tensor<1, dim>> grad;
-  grad.reserve(pow(n + 1, dim));
+  grad.reserve(pow(polyspace_order + 1, dim));
 
   std::vector<std::vector<double>> one_D_values;
   for (unsigned i1 = 0; i1 < dim; i1++)
@@ -179,15 +173,15 @@ std::vector<dealii::Tensor<1, dim>> JacobiP<dim>::grad(const dealii::Point<dim> 
   switch (dim)
   {
   case 1:
-    for (unsigned i1 = 0; i1 < n + 1; ++i1)
+    for (unsigned i1 = 0; i1 < polyspace_order + 1; ++i1)
     {
       grad_N[0] = one_D_grads[0][i1];
       grad.push_back(std::move(grad_N));
     }
     break;
   case 2:
-    for (unsigned i2 = 0; i2 < n + 1; ++i2)
-      for (unsigned i1 = 0; i1 < n + 1; ++i1)
+    for (unsigned i2 = 0; i2 < polyspace_order + 1; ++i2)
+      for (unsigned i1 = 0; i1 < polyspace_order + 1; ++i1)
       {
         grad_N[0] = one_D_grads[0][i1] * one_D_values[1][i2];
         grad_N[1] = one_D_values[0][i1] * one_D_grads[1][i2];
@@ -195,9 +189,9 @@ std::vector<dealii::Tensor<1, dim>> JacobiP<dim>::grad(const dealii::Point<dim> 
       }
     break;
   case 3:
-    for (unsigned i3 = 0; i3 < n + 1; ++i3)
-      for (unsigned i2 = 0; i2 < n + 1; ++i2)
-        for (unsigned i1 = 0; i1 < n + 1; ++i1)
+    for (unsigned i3 = 0; i3 < polyspace_order + 1; ++i3)
+      for (unsigned i2 = 0; i2 < polyspace_order + 1; ++i2)
+        for (unsigned i1 = 0; i1 < polyspace_order + 1; ++i1)
         {
           grad_N[0] = one_D_grads[0][i1] * one_D_values[1][i2] * one_D_values[2][i3];
           grad_N[1] = one_D_values[0][i1] * one_D_grads[1][i2] * one_D_values[2][i3];
@@ -211,7 +205,7 @@ std::vector<dealii::Tensor<1, dim>> JacobiP<dim>::grad(const dealii::Point<dim> 
 }
 
 template <int dim>
-std::vector<double> JacobiP<dim>::compute(const double x_inp) const
+std::vector<double> Jacobi_Poly_Basis<dim>::compute(const double &x_inp)
 {
   /* The Jacobi polynomial is evaluated using a recursion formula.
    * x     : The input point which should be in -1 <= x <= 1
@@ -222,7 +216,7 @@ std::vector<double> JacobiP<dim>::compute(const double x_inp) const
   double x = x_inp;
   if (domain & From_0_to_1)
     x = change_coords(x_inp);
-  std::vector<double> p(n + 1);
+  std::vector<double> p(polyspace_order + 1);
 
   double aold = 0.0L, anew = 0.0L, bnew = 0.0L, h1 = 0.0L, prow, x_bnew;
   double gamma0 = 0.0L, gamma1 = 0.0L;
@@ -233,17 +227,17 @@ std::vector<double> JacobiP<dim>::compute(const double x_inp) const
 
   // initial values P_0(x), P_1(x):
   p[0] = 1.0L / sqrt(gamma0);
-  if (n == 0)
+  if (polyspace_order == 0)
     return p;
 
   gamma1 = (a1) * (b1) / (ab + 3.0L) * gamma0;
   prow = ((ab + 2.0L) * x / 2.0L + (alpha - beta) / 2.0L) / sqrt(gamma1);
   p[1] = prow;
-  if (n == 1)
+  if (polyspace_order == 1)
     return p;
 
   aold = 2.0L / (2.0L + ab) * sqrt((a1) * (b1) / (ab + 3.0L));
-  for (unsigned int i = 1; i <= (n - 1); ++i)
+  for (unsigned int i = 1; i <= (polyspace_order - 1); ++i)
   {
     h1 = 2.0L * i + alpha + beta;
     anew = 2.0L / (h1 + 2.0L) * sqrt((i + 1) * (i + ab1) * (i + a1) * (i + b1) /
@@ -257,15 +251,6 @@ std::vector<double> JacobiP<dim>::compute(const double x_inp) const
 }
 
 template <int dim>
-JacobiP<dim>::~JacobiP()
+Jacobi_Poly_Basis<dim>::~Jacobi_Poly_Basis()
 {
 }
-
-Derived_Factory<JacobiP<1>, Poly_Basis<1, 1>, std::string>
-Poly_Factory_1D("legendre1");
-
-Derived_Factory<JacobiP<2>, Poly_Basis<2, 2>, std::string>
-Poly_Factory_2D("legendre2");
-
-Derived_Factory<JacobiP<3>, Poly_Basis<3, 3>, std::string>
-Poly_Factory_3D("legendre3");

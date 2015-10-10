@@ -1,30 +1,30 @@
-#include "class_factory.hpp"
 #include <string>
 #include <vector>
-#include <deal.II/base/tensor.h>
 #include <cmath>
+#include <memory>
+#include <deal.II/base/tensor.h>
 
 #ifndef POLY_BASIS
 #define POLY_BASIS
 
-template <int dim, int spacedim = dim>
-class Poly_Basis : public Base_Template<Poly_Basis<dim, spacedim>, std::string>
+enum Domain
+{
+  From_0_to_1 = 1 << 0,
+  From_minus_1_to_1 = 1 << 1
+};
+
+#include "jacobi_polynomial.hpp"
+#include "lagrange_polynomial.hpp"
+#include "lagrange_polynomial_vandermonde.hpp"
+
+template <typename Derived_Basis, int dim>
+class Poly_Basis
 {
  public:
-  Poly_Basis()
-  {
-  }
-
-  virtual std::string get_type() const = 0;
-
-  /*
-   * The function init is only called when we create the object with the empty
-   * constructor.
-   */
-  virtual void init(const std::vector<dealii::Point<dim>> &Points) = 0;
-
-  virtual std::vector<double> value(const dealii::Point<dim> &P0) const = 0;
-
+  Poly_Basis() = delete;
+  Poly_Basis(const std::vector<dealii::Point<1, double>> &support_points,
+             const int &domain_);
+  std::vector<double> value(const dealii::Point<dim, double> &P0);
   /*
    * This function gives you the values of half-range basis functions, which
    * will be used in the adaptive meshing. The approach is to give the basis
@@ -48,14 +48,16 @@ class Poly_Basis : public Base_Template<Poly_Basis<dim, spacedim>, std::string>
    *               |---|---|
    *               | 1 | 2 |
    */
-  virtual std::vector<double>
-  value(const dealii::Point<dim> &P0, const unsigned half_range) const = 0;
 
-  virtual std::vector<dealii::Tensor<1, dim>>
-  grad(const dealii::Point<dim> &P0) const = 0;
-  virtual ~Poly_Basis()
-  {
-  }
+  std::vector<double>
+   value(const dealii::Point<dim, double> &P0, const unsigned half_range);
+  std::vector<dealii::Tensor<1, dim>> grad(const dealii::Point<dim, double> &P0);
+  ~Poly_Basis();
+
+ private:
+  std::unique_ptr<Derived_Basis> poly_basis;
 };
+
+#include "poly_basis.tpp"
 
 #endif // POLY_BASIS
