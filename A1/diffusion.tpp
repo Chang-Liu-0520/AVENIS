@@ -1,12 +1,12 @@
 #include "diffusion.hpp"
 
 template <int dim>
-Diffusion_0<dim>::Diffusion_0(const unsigned &order,
-                              const MPI_Comm &comm_,
-                              const unsigned &comm_size_,
-                              const unsigned &comm_rank_,
-                              const unsigned &n_threads,
-                              const bool &Adaptive_ON_)
+Diffusion<dim>::Diffusion(const unsigned &order,
+                          const MPI_Comm &comm_,
+                          const unsigned &comm_size_,
+                          const unsigned &comm_rank_,
+                          const unsigned &n_threads,
+                          const bool &Adaptive_ON_)
   : comm(comm_),
     comm_size(comm_size_),
     comm_rank(comm_rank_),
@@ -19,16 +19,20 @@ Diffusion_0<dim>::Diffusion_0(const unsigned &order,
            dealii::Triangulation<dim>::smoothing_on_refinement |
            dealii::Triangulation<dim>::smoothing_on_coarsening)),
     Elem_Mapping(),
-    elem_integration_points(quad_order),
-    face_integration_points(quad_order),
+    elem_integration_capsul(quad_order),
+    face_integration_capsul(quad_order),
     LGL_quad_1D(poly_order + 1),
     support_points_1D(LGL_quad_1D.get_points()),
     DG_Elem1(poly_order),
     DG_System1(DG_Elem1, 1 + dim),
     DoF_H_Refine(Grid1),
     DoF_H1_System(Grid1),
-    Elem_Basis(elem_integration_points.get_points(), LGL_quad_1D.get_points()),
-    Face_Basis(face_integration_points.get_points(), LGL_quad_1D.get_points()),
+    the_elem_basis(elem_integration_capsul.get_points(),
+                   LGL_quad_1D.get_points(),
+                   Domain::From_0_to_1),
+    the_face_basis(face_integration_capsul.get_points(),
+                   LGL_quad_1D.get_points(),
+                   Domain::From_0_to_1),
     refn_cycle(0),
     Adaptive_ON(Adaptive_ON_),
     n_threads(n_threads)
@@ -55,7 +59,7 @@ Diffusion_0<dim>::Diffusion_0(const unsigned &order,
 }
 
 template <int dim>
-Diffusion_0<dim>::~Diffusion_0()
+Diffusion<dim>::~Diffusion()
 {
   DoF_H1_System.clear();
   DoF_H_Refine.clear();
@@ -67,12 +71,12 @@ Diffusion_0<dim>::~Diffusion_0()
 }
 
 template <int dim>
-void Diffusion_0<dim>::Compute_Error(const Function<dim, double> &func,
-                                     const std::vector<dealii::Point<dim>> &points_loc,
-                                     const std::vector<double> &JxWs,
-                                     const Eigen::MatrixXd &modal_vector,
-                                     const Eigen::MatrixXd &mode_to_Qpoint_matrix,
-                                     double &error)
+void Diffusion<dim>::Compute_Error(const Function<dim, double> &func,
+                                   const std::vector<dealii::Point<dim>> &points_loc,
+                                   const std::vector<double> &JxWs,
+                                   const Eigen::MatrixXd &modal_vector,
+                                   const Eigen::MatrixXd &mode_to_Qpoint_matrix,
+                                   double &error)
 {
   error = 0;
   assert(points_loc.size() == JxWs.size());
@@ -90,13 +94,12 @@ void Diffusion_0<dim>::Compute_Error(const Function<dim, double> &func,
 }
 
 template <int dim>
-void
- Diffusion_0<dim>::Compute_Error(const Function<dim, dealii::Tensor<1, dim>> &func,
-                                 const std::vector<dealii::Point<dim>> &points_loc,
-                                 const std::vector<double> &JxWs,
-                                 const Eigen::MatrixXd &modal_vector,
-                                 const Eigen::MatrixXd &mode_to_Qpoint_matrix,
-                                 double &error)
+void Diffusion<dim>::Compute_Error(const Function<dim, dealii::Tensor<1, dim>> &func,
+                                   const std::vector<dealii::Point<dim>> &points_loc,
+                                   const std::vector<double> &JxWs,
+                                   const Eigen::MatrixXd &modal_vector,
+                                   const Eigen::MatrixXd &mode_to_Qpoint_matrix,
+                                   double &error)
 {
   error = 0;
   unsigned n_unknowns = mode_to_Qpoint_matrix.cols();
@@ -126,15 +129,15 @@ void
  * and elements.
  */
 template <int dim>
-void Diffusion_0<dim>::CalculateMatrices(Cell_Class<dim> &cell,
-                                         Poly_Basis<elem_basis_type, dim> &the_elem_basis)
+void Diffusion<dim>::CalculateMatrices(Cell_Class<dim> &cell,
+                                       Poly_Basis<elem_basis_type, dim> &the_elem_basis)
 {
   const unsigned n_polys = pow(poly_order + 1, dim);
   const unsigned n_polyfaces = pow(poly_order + 1, dim - 1);
   typedef Eigen::MatrixXd T;
 
-  Poly_Basis<face_basis_type, dim - 1> face_poly_basis(support_points_1D,
-                                                       Domain::From_0_to_1);
+  Poly_Basis<face_basis_type, dim - 1> face_poly_basis(
+   face_integration_capsul.get_points(), support_points_1D, Domain::From_0_to_1);
   std::vector<dealii::DerivativeForm<1, dim, dim>> D_Forms =
    cell.pCell_FEValues->get_inverse_jacobians();
   std::vector<dealii::Point<dim>> QPoints_Locs =
@@ -151,16 +154,15 @@ void Diffusion_0<dim>::CalculateMatrices(Cell_Class<dim> &cell,
   T M = T::Zero(n_polys, n_polys);
 
   Eigen::MatrixXd Ni_grad, NjT, Ni_vec;
-  for (unsigned i1 = 0; i1 < elem_integration_points.size(); ++i1)
+  for (unsigned i1 = 0; i1 < elem_integration_capsul.size(); ++i1)
   {
     Ni_grad = Eigen::MatrixXd::Zero(dim * n_polys, 1);
-    NjT = Eigen::MatrixXd::Zero(1, n_polys);
+    NjT = the_elem_basis.the_bases.block(i1, 0, 1, n_polys);
     Ni_vec = Eigen::MatrixXd::Zero(dim * n_polys, dim);
     for (unsigned i_poly = 0; i_poly < n_polys; ++i_poly)
     {
-      NjT(0, i_poly) = Elem_Basis.bases[i1][i_poly];
       dealii::Tensor<2, dim> d_form = D_Forms[i1];
-      dealii::Tensor<1, dim> N_grads_X = Elem_Basis.bases_grads[i1][i_poly] * d_form;
+      dealii::Tensor<1, dim> N_grads_X = the_elem_basis.bases_grads[i1][i_poly] * d_form;
       for (unsigned i_dim = 0; i_dim < dim; ++i_dim)
       {
         Ni_vec(n_polys * i_dim + i_poly, i_dim) = NjT(0, i_poly);
@@ -175,7 +177,7 @@ void Diffusion_0<dim>::CalculateMatrices(Cell_Class<dim> &cell,
 
   Eigen::MatrixXd normal(dim, 1);
   std::vector<dealii::Point<dim - 1>> Face_Q_Points =
-   face_integration_points.get_points();
+   face_integration_capsul.get_points();
   for (unsigned i_face = 0; i_face < n_faces_per_cell; ++i_face)
   {
     cell.reinit_Face_FEValues(i_face);
@@ -184,8 +186,8 @@ void Diffusion_0<dim>::CalculateMatrices(Cell_Class<dim> &cell,
     Eigen::MatrixXd H_On_Face = Eigen::MatrixXd::Zero(n_polyfaces, n_polyfaces);
     Eigen::MatrixXd H2_On_Face = Eigen::MatrixXd::Zero(n_polyfaces, n_polyfaces);
     std::vector<dealii::Point<dim>> Projected_Face_Q_Points(
-     face_integration_points.size());
-    dealii::QProjector<dim>::project_to_face(face_integration_points,
+     face_integration_capsul.size());
+    dealii::QProjector<dim>::project_to_face(face_integration_capsul,
                                              i_face,
                                              Projected_Face_Q_Points);
     std::vector<dealii::Point<dim>> Normals =
@@ -194,14 +196,14 @@ void Diffusion_0<dim>::CalculateMatrices(Cell_Class<dim> &cell,
     Eigen::MatrixXd NjT_Face = Eigen::MatrixXd::Zero(1, n_polyfaces);
     Eigen::MatrixXd Nj_vec;
     Eigen::MatrixXd Nj = Eigen::MatrixXd::Zero(n_polys, 1);
-    for (unsigned i_Q_face = 0; i_Q_face < face_integration_points.size(); ++i_Q_face)
+    for (unsigned i_Q_face = 0; i_Q_face < face_integration_capsul.size(); ++i_Q_face)
     {
       Nj_vec = Eigen::MatrixXd::Zero(dim * n_polys, dim);
       std::vector<double> N_valus =
        the_elem_basis.value(Projected_Face_Q_Points[i_Q_face]);
       std::vector<double> half_range_face_basis, face_basis;
 
-      face_basis = Face_Basis.bases[i_Q_face];
+      face_basis = the_face_basis.bases[i_Q_face];
       half_range_face_basis =
        face_poly_basis.value(Face_Q_Points[i_Q_face], cell.half_range_flag[i_face]);
 
@@ -237,14 +239,14 @@ void Diffusion_0<dim>::CalculateMatrices(Cell_Class<dim> &cell,
 }
 
 template <int dim>
-void Diffusion_0<dim>::Assemble_Globals()
+void Diffusion<dim>::Assemble_Globals()
 {
   unsigned n_polys = pow(poly_order + 1, dim);
   unsigned n_polyfaces = pow(poly_order + 1, dim - 1);
-  Poly_Basis<elem_basis_type, dim> elem_poly_basis(support_points_1D,
-                                                   Domain::From_0_to_1);
-  std::vector<double> Q_Weights = elem_integration_points.get_weights();
-  std::vector<double> Face_Q_Weights = face_integration_points.get_weights();
+  Poly_Basis<elem_basis_type, dim> elem_poly_basis(
+   elem_integration_capsul.get_points(), support_points_1D, Domain::From_0_to_1);
+  std::vector<double> Q_Weights = elem_integration_capsul.get_weights();
+  std::vector<double> Face_Q_Weights = face_integration_capsul.get_weights();
   dealii::QGaussLobatto<dim> LGL_elem_support_points(poly_order + 1);
   dealii::QGaussLobatto<dim - 1> LGL_face_support_points(poly_order + 1);
 #ifdef _OPENMP
@@ -257,14 +259,14 @@ void Diffusion_0<dim>::Assemble_Globals()
 #endif
     dealii::FEValues<dim> FEValues_Elem1(Elem_Mapping,
                                          DG_Elem1,
-                                         elem_integration_points,
+                                         elem_integration_capsul,
                                          dealii::update_JxW_values |
                                           dealii::update_quadrature_points |
                                           dealii::update_inverse_jacobians |
                                           dealii::update_jacobians);
     dealii::FEFaceValues<dim> FEValues_Face1(Elem_Mapping,
                                              DG_Elem1,
-                                             face_integration_points,
+                                             face_integration_capsul,
                                              dealii::update_values |
                                               dealii::update_JxW_values |
                                               dealii::update_quadrature_points |
@@ -368,8 +370,6 @@ void Diffusion_0<dim>::Assemble_Globals()
          Eigen::MatrixXd::Zero(n_polyfaces * n_faces_per_cell, 1);
         Eigen::MatrixXd uhat_vec =
          Eigen::MatrixXd::Zero(n_polyfaces * n_faces_per_cell, 1);
-        Eigen::MatrixXd lambda_vec =
-         Eigen::MatrixXd::Zero(n_polyfaces * n_faces_per_cell, 1);
         for (unsigned i_face = 0; i_face < n_faces_per_cell; ++i_face)
         {
           FEValues_Face2.reinit(cell.dealii_Cell, i_face);
@@ -382,11 +382,11 @@ void Diffusion_0<dim>::Assemble_Globals()
              FEValues_Face2.get_quadrature_points();
             if (cell.half_range_flag[i_face] == 0)
             {
-              Face_Basis.Project_to_Basis(Dirichlet_BC_func,
-                                          FaceQ_Points_Loc,
-                                          face_supp_points_loc,
-                                          Face_Q_Weights,
-                                          gD_vec);
+              the_face_basis.Project_to_Basis(Dirichlet_BC_func,
+                                              FaceQ_Points_Loc,
+                                              face_supp_points_loc,
+                                              Face_Q_Weights,
+                                              gD_vec);
             }
             else
               std::cout << "There is something wrong dude!\n";
@@ -405,20 +405,20 @@ void Diffusion_0<dim>::Assemble_Globals()
             std::vector<dealii::Point<dim>> Normal_Vec_Dir =
              cell.pFace_FEValues->get_normal_vectors();
             if (cell.half_range_flag[i_face] == 0)
-              Face_Basis.Project_to_Basis(Neumann_BC_func,
-                                          FaceQ_Points_Loc,
-                                          face_supp_points_loc,
-                                          Normal_Vec_Dir,
-                                          face_normals_at_support,
-                                          Face_Q_Weights,
-                                          gN_vec_face);
+              the_face_basis.Project_to_Basis(Neumann_BC_func,
+                                              FaceQ_Points_Loc,
+                                              face_supp_points_loc,
+                                              Normal_Vec_Dir,
+                                              face_normals_at_support,
+                                              Face_Q_Weights,
+                                              gN_vec_face);
             gN_vec.block(i_face * n_polyfaces, 0, n_polyfaces, 1) = gN_vec_face;
           }
         }
 
         std::vector<dealii::Point<dim>> elem_supp_points_loc =
          FEValues_Elem2.get_quadrature_points();
-        Elem_Basis.Project_to_Basis(
+        the_elem_basis.Project_to_Basis(
          f_func, Q_Points_Loc, elem_supp_points_loc, Q_Weights, f_vec);
         std::vector<double> rhs_col;
         Eigen::MatrixXd u_vec, q_vec;
@@ -444,11 +444,11 @@ void Diffusion_0<dim>::Assemble_Globals()
            cell.pFace_FEValues->get_quadrature_points();
           std::vector<dealii::Point<dim>> face_supp_points_loc =
            FEValues_Face2.get_quadrature_points();
-          Face_Basis.Project_to_Basis(u_func,
-                                      Face_Q_Points_Loc,
-                                      face_supp_points_loc,
-                                      face_integration_points.get_weights(),
-                                      face_exact_uhat_vec);
+          the_face_basis.Project_to_Basis(u_func,
+                                          Face_Q_Points_Loc,
+                                          face_supp_points_loc,
+                                          face_integration_capsul.get_weights(),
+                                          face_exact_uhat_vec);
           exact_uhat_vec.insert(exact_uhat_vec.end(),
                                 face_exact_uhat_vec.data(),
                                 face_exact_uhat_vec.data() +
@@ -471,7 +471,7 @@ void Diffusion_0<dim>::Assemble_Globals()
 
 template <int dim>
 template <typename T, typename U>
-void Diffusion_0<dim>::q_from_u_uhat(
+void Diffusion<dim>::q_from_u_uhat(
  const U &LDLT_of_A, const T &B, const T &C, const T &uhat, const T &u, T &q)
 {
   q = B * u - C * uhat;
@@ -480,31 +480,31 @@ void Diffusion_0<dim>::q_from_u_uhat(
 
 template <int dim>
 template <typename T, typename U>
-void Diffusion_0<dim>::u_from_uhat_f(const U &LDLT_of_BT_Ainv_B_plus_D,
-                                     const T &BT_Ainv,
-                                     const T &C,
-                                     const T &E,
-                                     const T &M,
-                                     const T &uhat,
-                                     const T &lambda,
-                                     const T &f,
-                                     T &u)
+void Diffusion<dim>::u_from_uhat_f(const U &LDLT_of_BT_Ainv_B_plus_D,
+                                   const T &BT_Ainv,
+                                   const T &C,
+                                   const T &E,
+                                   const T &M,
+                                   const T &uhat,
+                                   const T &lambda,
+                                   const T &f,
+                                   T &u)
 {
   u = LDLT_of_BT_Ainv_B_plus_D.solve(M * f + BT_Ainv * C * uhat + E * lambda);
 }
 
 template <int dim>
 template <typename T>
-void Diffusion_0<dim>::uhat_u_q_to_jth_col(const T &C,
-                                           const T &E,
-                                           const T &H,
-                                           const T &H2,
-                                           const T &uhat,
-                                           const T &u,
-                                           const T &q,
-                                           const T &g_N,
-                                           const double &multiplier,
-                                           std::vector<double> &jth_col)
+void Diffusion<dim>::uhat_u_q_to_jth_col(const T &C,
+                                         const T &E,
+                                         const T &H,
+                                         const T &H2,
+                                         const T &uhat,
+                                         const T &u,
+                                         const T &q,
+                                         const T &g_N,
+                                         const double &multiplier,
+                                         std::vector<double> &jth_col)
 {
   T jth_col_vec =
    multiplier * (C.transpose() * q + E.transpose() * u - H * uhat) - H2 * g_N;
@@ -512,7 +512,7 @@ void Diffusion_0<dim>::uhat_u_q_to_jth_col(const T &C,
 }
 
 template <int dim>
-void Diffusion_0<dim>::Calculate_Internal_Unknowns(double *const &local_uhat_vec)
+void Diffusion<dim>::Calculate_Internal_Unknowns(double *const &local_uhat_vec)
 {
   dealii::IndexSet refn_ghost_indices, elem_ghost_indices;
   dealii::IndexSet refn_owned_indices = DoF_H_Refine.locally_owned_dofs();
@@ -531,9 +531,9 @@ void Diffusion_0<dim>::Calculate_Internal_Unknowns(double *const &local_uhat_vec
   elem_solu.reinit(elem_owned_indices, elem_ghost_indices, comm);
 
   unsigned n_polys = pow(poly_order + 1, dim);
-  unsigned n_postprocessed_polys = pow(poly_order + 2, dim);
   unsigned n_polyfaces = pow(poly_order + 1, dim - 1);
-  Poly_Basis<elem_basis_type, dim> the_elem_basis(support_points_1D, Domain::From_0_to_1);
+  Poly_Basis<elem_basis_type, dim> the_elem_basis(
+   elem_integration_capsul.get_points(), support_points_1D, Domain::From_0_to_1);
 
   double Error_u = 0;
   double Error_q = 0;
@@ -541,46 +541,25 @@ void Diffusion_0<dim>::Calculate_Internal_Unknowns(double *const &local_uhat_vec
   double Error_div_q = 0;
   double Error_div_qstar = 0;
 
-  std::vector<double> Q_Weights = elem_integration_points.get_weights();
-  std::vector<double> Face_Q_Weights = face_integration_points.get_weights();
+  std::vector<double> Q_Weights = elem_integration_capsul.get_weights();
+  std::vector<double> Face_Q_Weights = face_integration_capsul.get_weights();
 
-  dealii::QGaussLobatto<1> postproc_support_points(poly_order + 1);
-  BasisIntegrator_Matrix<dim, elem_basis_type> PostProcess_Elem_Basis(
-   elem_integration_points.get_points(), postproc_support_points.get_points());
-  Eigen::MatrixXd PostProcess_Mode_to_QPoint_Matrix(Q_Weights.size(),
-                                                    n_postprocessed_polys);
+  dealii::QGaussLobatto<1> postproc_support_points(poly_order + 2);
+  Poly_Basis<elem_basis_type, dim> the_postproc_elem_basis(
+   elem_integration_capsul.get_points(),
+   postproc_support_points.get_points(),
+   Domain::From_0_to_1);
+  Eigen::MatrixXd PostProcess_Mode_to_QPoint_Matrix = the_postproc_elem_basis.the_bases;
+
   dealii::QGaussLobatto<dim> LGL_elem_support_points(poly_order + 1);
   dealii::QGaussLobatto<dim - 1> LGL_face_support_points(poly_order + 1);
 
-  for (unsigned i_point = 0; i_point < Q_Weights.size(); ++i_point)
-  {
-    for (unsigned i_poly = 0; i_poly < n_postprocessed_polys; ++i_poly)
-    {
-      PostProcess_Mode_to_QPoint_Matrix(i_point, i_poly) =
-       PostProcess_Elem_Basis.bases[i_point][i_poly];
-    }
-  }
-
-  Eigen::MatrixXd Mode_to_QPoint_Matrix(Q_Weights.size(), n_polys);
-  for (unsigned i_point = 0; i_point < Q_Weights.size(); ++i_point)
-  {
-    for (unsigned i_poly = 0; i_poly < n_polys; ++i_poly)
-    {
-      Mode_to_QPoint_Matrix(i_point, i_poly) = Elem_Basis.bases[i_point][i_poly];
-    }
-  }
+  Eigen::MatrixXd Mode_to_QPoint_Matrix = the_elem_basis.the_bases;
 
   dealii::FE_DGQ<1> DG_Elem_1D(poly_order);
-  BasisIntegrator_Matrix<dim, elem_basis_type> Elem_EQ_Dist_Basis(
-   DG_Elem1.get_unit_support_points(), DG_Elem_1D.get_unit_support_points());
-  Eigen::MatrixXd Mode_to_Node_Matrix(n_polys, n_polys);
-  for (unsigned i_point = 0; i_point < n_polys; ++i_point)
-  {
-    for (unsigned i_poly = 0; i_poly < n_polys; ++i_poly)
-    {
-      Mode_to_Node_Matrix(i_point, i_poly) = Elem_EQ_Dist_Basis.bases[i_point][i_poly];
-    }
-  }
+  Poly_Basis<elem_basis_type, dim> the_elem_qual_dist_basis(
+   DG_Elem1.get_unit_support_points(), LGL_quad_1D.get_points(), Domain::From_0_to_1);
+  Eigen::MatrixXd Mode_to_Node_Matrix = the_elem_qual_dist_basis.the_bases;
 
 #ifdef _OPENMP
 #pragma omp parallel
@@ -592,7 +571,7 @@ void Diffusion_0<dim>::Calculate_Internal_Unknowns(double *const &local_uhat_vec
 #endif
     dealii::FEValues<dim> FEValues_Elem1(Elem_Mapping,
                                          DG_Elem1,
-                                         elem_integration_points,
+                                         elem_integration_capsul,
                                          dealii::update_values | dealii::update_gradients |
                                           dealii::update_JxW_values |
                                           dealii::update_quadrature_points |
@@ -601,7 +580,7 @@ void Diffusion_0<dim>::Calculate_Internal_Unknowns(double *const &local_uhat_vec
     dealii::FEFaceValues<dim> FEValues_Face1(
      Elem_Mapping,
      DG_Elem1,
-     face_integration_points,
+     face_integration_capsul,
      dealii::update_values | dealii::update_gradients |
       dealii::update_JxW_values | dealii::update_quadrature_points |
       dealii::update_face_normal_vectors | dealii::update_inverse_jacobians);
@@ -647,7 +626,7 @@ void Diffusion_0<dim>::Calculate_Internal_Unknowns(double *const &local_uhat_vec
       std::vector<dealii::Point<dim>> Q_Points_Loc =
        cell.pCell_FEValues->get_quadrature_points();
       Eigen::MatrixXd exact_f_vec;
-      Elem_Basis.Project_to_Basis(
+      the_elem_basis.Project_to_Basis(
        f_func, Q_Points_Loc, elem_supp_points_loc, Q_Weights, exact_f_vec);
 
       Eigen::MatrixXd solved_uhat_vec =
@@ -666,11 +645,11 @@ void Diffusion_0<dim>::Calculate_Internal_Unknowns(double *const &local_uhat_vec
            cell.pFace_FEValues->get_quadrature_points();
           std::vector<dealii::Point<dim>> face_supp_points_loc =
            FEValues_Face2.get_quadrature_points();
-          Face_Basis.Project_to_Basis(Dirichlet_BC_func,
-                                      Face_Q_Points_Loc,
-                                      face_supp_points_loc,
-                                      Face_Q_Weights,
-                                      face_uhat_vec);
+          the_face_basis.Project_to_Basis(Dirichlet_BC_func,
+                                          Face_Q_Points_Loc,
+                                          face_supp_points_loc,
+                                          Face_Q_Weights,
+                                          face_uhat_vec);
           solved_uhat_vec.block(i_face * n_polyfaces, 0, n_polyfaces, 1) = face_uhat_vec;
           solved_lambda_vec.block(i_face * n_polyfaces, 0, n_polyfaces, 1) =
            face_uhat_vec;
@@ -703,7 +682,7 @@ void Diffusion_0<dim>::Calculate_Internal_Unknowns(double *const &local_uhat_vec
 
       Eigen::MatrixXd ustar;
       PostProcess(cell,
-                  PostProcess_Elem_Basis,
+                  the_postproc_elem_basis,
                   solved_u_vec,
                   solved_q_vec,
                   ustar,
@@ -794,13 +773,13 @@ void Diffusion_0<dim>::Calculate_Internal_Unknowns(double *const &local_uhat_vec
 
 template <int dim>
 template <typename T1, typename T2>
-void Diffusion_0<dim>::Internal_Vars_Errors(const Cell_Class<dim> &cell,
-                                            const T1 &solved_u_vec,
-                                            const T1 &solved_q_vec,
-                                            const T2 &Mode_to_Qpoints_Matrix,
-                                            double &Error_u,
-                                            double &Error_q,
-                                            double &Error_div_q)
+void Diffusion<dim>::Internal_Vars_Errors(const Cell_Class<dim> &cell,
+                                          const T1 &solved_u_vec,
+                                          const T1 &solved_q_vec,
+                                          const T2 &Mode_to_Qpoints_Matrix,
+                                          double &Error_u,
+                                          double &Error_q,
+                                          double &Error_div_q)
 {
   unsigned n_polys = pow(poly_order + 1, dim);
   std::vector<dealii::DerivativeForm<1, dim, dim>> D_Forms =
@@ -827,7 +806,8 @@ void Diffusion_0<dim>::Internal_Vars_Errors(const Cell_Class<dim> &cell,
     double divq_at_i_Qpoint = 0;
     for (unsigned i_poly = 0; i_poly < n_polys; ++i_poly)
     {
-      dealii::Tensor<1, dim> grad_X = Elem_Basis.bases_grads[i_Qpoint][i_poly] * d_form;
+      dealii::Tensor<1, dim> grad_X =
+       the_elem_basis.bases_grads[i_Qpoint][i_poly] * d_form;
       for (unsigned i_dim = 0; i_dim < dim; ++i_dim)
       {
         divq_at_i_Qpoint += grad_X[i_dim] * solved_q_vec(i_dim * n_polys + i_poly, 0);
@@ -860,9 +840,9 @@ void Diffusion_0<dim>::Internal_Vars_Errors(const Cell_Class<dim> &cell,
 
 template <int dim>
 template <typename T>
-void Diffusion_0<dim>::Calculate_Postprocess_Matrices(
+void Diffusion<dim>::Calculate_Postprocess_Matrices(
  Cell_Class<dim> &cell,
- const BasisIntegrator_Matrix<dim, elem_basis_type> &PostProcess_Elem_Basis,
+ const Poly_Basis<elem_basis_type, dim> &PostProcess_Elem_Basis,
  T &DM_star,
  T &DB2)
 {
@@ -879,7 +859,7 @@ void Diffusion_0<dim>::Calculate_Postprocess_Matrices(
   DB2 = T::Zero(n_polys_plus1, dim * n_polys);
 
   Eigen::MatrixXd grad_Ni, Ni_vec;
-  for (unsigned i_point = 0; i_point < elem_integration_points.size(); ++i_point)
+  for (unsigned i_point = 0; i_point < elem_integration_capsul.size(); ++i_point)
   {
     dealii::Tensor<2, dim> d_form = D_Forms[i_point];
     grad_Ni = Eigen::MatrixXd::Zero(n_polys_plus1, dim);
@@ -896,7 +876,8 @@ void Diffusion_0<dim>::Calculate_Postprocess_Matrices(
     for (unsigned i_poly = 0; i_poly < n_polys; ++i_poly)
     {
       for (unsigned i_dim = 0; i_dim < dim; ++i_dim)
-        Ni_vec(i_dim * n_polys + i_poly, i_dim) = Elem_Basis.bases[i_point][i_poly];
+        Ni_vec(i_dim * n_polys + i_poly, i_dim) =
+         the_elem_basis.bases[i_point][i_poly];
     }
     DM_star += cell_JxW[i_point] * grad_Ni * grad_Ni.transpose();
     Eigen::MatrixXd kappa_inv_ =
@@ -907,13 +888,13 @@ void Diffusion_0<dim>::Calculate_Postprocess_Matrices(
 
 template <int dim>
 template <typename T1>
-void Diffusion_0<dim>::PostProcess(Cell_Class<dim> &cell,
-                                   const BasisIntegrator_Matrix<dim, elem_basis_type> &PostProcess_Elem_Basis,
-                                   const T1 &u,
-                                   const T1 &q,
-                                   T1 &ustar,
-                                   const T1 &PostProcess_Mode_to_Node,
-                                   double &error_ustar)
+void Diffusion<dim>::PostProcess(Cell_Class<dim> &cell,
+                                 const Poly_Basis<elem_basis_type, dim> &PostProcess_Elem_Basis,
+                                 const T1 &u,
+                                 const T1 &q,
+                                 T1 &ustar,
+                                 const T1 &PostProcess_Mode_to_Node,
+                                 double &error_ustar)
 {
   Eigen::MatrixXd LHS_mat_of_ustar, DB2;
   //  JacobiP<dim> Jacobi_P_plus1(poly_order + 1, 0, 0,
@@ -934,7 +915,7 @@ void Diffusion_0<dim>::PostProcess(Cell_Class<dim> &cell,
 }
 
 template <int dim>
-void Diffusion_0<dim>::vtk_visualizer()
+void Diffusion<dim>::vtk_visualizer()
 {
   dealii::DataOut<dim> data_out;
   data_out.attach_dof_handler(DoF_H1_System);

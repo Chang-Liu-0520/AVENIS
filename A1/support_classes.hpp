@@ -23,165 +23,6 @@ struct Function
   virtual T value(const dealii::Point<dim> &x, const dealii::Point<dim> &n) const = 0;
 };
 
-/* BasisFuncs is the structure containing the basis functions, their gradients,
- * and their divergence. The main motivation behind this is to avoid the
- * repeated calculation of bases on a unit cell for every element. This
- * structure has a constructor which takes quadrature points as inputs and
- * stores the corresponding basis.
- */
-template <int dim, typename basis_type>
-struct BasisIntegrator_Matrix
-{
-  std::vector<dealii::Point<1>> support_points_1D;
-  std::vector<std::vector<double>> bases;
-  std::vector<std::vector<dealii::Tensor<1, dim>>> bases_grads;
-
-  /*!
-   * As you can see, you can have different values for number of quadrature
-   * points and number of basis functions.
-   * By execution of this constructor the bases[i][j] will contain the value
-   * of jth basis function at ith point. You can assume that functions are
-   * stored in different columns of the same row. Also, different rows
-   * correspond to different points.
-   *
-   *                                function j
-   *                                    |
-   *                                    |
-   *
-   *                            x  ...  x  ...  x
-   *                            .       .       .
-   *                            .       :       .
-   *                            .       x       .
-   *          point i ---->     x      Bij ...  x
-   *                            .       x       .
-   *                            .       :       .
-   *                            .       .       .
-   *                            x  ...  x  ...  x
-   *
-   *
-   *    ======  Now let us consider the matrix B_ij = bases[i][j]  ======
-   * To convert from modal to nodal (where modes are stored in a column vector),
-   * use:
-   *
-   *                               Ni = Bij * Mj
-   *
-   */
-  BasisIntegrator_Matrix(const std::vector<dealii::Point<dim>> &integration_points,
-                         const std::vector<dealii::Point<1>> &support_points_1D_)
-    : support_points_1D(support_points_1D_)
-  {
-    Poly_Basis<basis_type, dim> the_poly_basis(support_points_1D, Domain::From_0_to_1);
-    for (unsigned i1 = 0; i1 < integration_points.size(); ++i1)
-    {
-      dealii::Point<dim, double> p0 = integration_points[i1];
-      std::vector<double> Ni = the_poly_basis.value(p0);
-      std::vector<dealii::Tensor<1, dim>> Ni_grad = the_poly_basis.grad(p0);
-      bases.push_back(Ni);
-      bases_grads.push_back(Ni_grad);
-    }
-  }
-
-  /*!
-   * This function projects the function "func" to the current basis.
-   * Since, this is a regular integration, we do not need the JxW. We
-   * need only the weights.
-   * Note for example that: \f[f(x)=\sum_{i} \alpha_i N_i(x) \Longrightarrow
-   * \left(f(x),N_j(x)\right) = \sum_i \alpha_i \left(N_i(x),N(x)\right).\f]
-   * Now, if \f$N_i\f$'s are orthonormal to each other, then \f$ \alpha_i =
-   * (f,N_i)\f$. Otherwise, we are using a Lagrangian basis and in order to
-   * project a function onto this basis, we need to just calculate the value
-   * of the function at the corresponding nodal points. Finally, it is
-   * worthwhile
-   * noting that, the parameter @c func_dim is not always the same as
-   * <code>dim</code> (from the containing class). The reason is we want to for
-   * example calculte \f$\hat u\f$ with the same function as we calculate
-   * \f$u\f$. So, although the space of \f$\hat u\f$ is a \f$d-1\f$-dimonsional
-   * space, we evaluate its value using a \f$d\f$-dimensional function.
-   * \tparam func_dim is the dimension of the @c func argument. This dimension
-   * has no utility whatsoever!
-   * @param func is
-   * @param integration_points is the input integration points into this
-   * function. We will assert if the number of the integration points in this
-   * function is the same as the number of rows of the:
-   * BasisIntegrator_Matrix#bases.
-   * @param weights is the integration weights corresponding to different points
-   * in the @c integration_points argument.
-   */
-  template <int func_dim, typename T>
-  void Project_to_Basis(const Function<func_dim, T> &func,
-                        const std::vector<dealii::Point<func_dim>> &integration_points,
-                        const std::vector<dealii::Point<func_dim>> &support_points,
-                        const std::vector<double> &weights,
-                        Eigen::MatrixXd &vec)
-  {
-    if (std::is_same<Jacobi_Poly_Basis<dim>, basis_type>::value)
-    {
-      assert(bases.size() == integration_points.size());
-      assert(integration_points.size() == weights.size());
-      unsigned n_polys = bases[0].size();
-      vec = Eigen::MatrixXd::Zero(n_polys, 1);
-      for (unsigned i1 = 0; i1 < weights.size(); ++i1)
-      {
-        Eigen::MatrixXd Nj(n_polys, 1);
-        Nj = Eigen::VectorXd::Map(bases[i1].data(), n_polys);
-        vec += weights[i1] *
-               func.value(integration_points[i1], integration_points[i1]) * Nj;
-      }
-    }
-    else if (std::is_same<Lagrange_Polys<dim>, basis_type>::value)
-    {
-      unsigned n_polys_1D = support_points_1D.size();
-      unsigned n_polys = pow(n_polys_1D, dim);
-      assert(support_points.size() == n_polys);
-      vec = Eigen::MatrixXd::Zero(n_polys, 1);
-      unsigned counter = 0;
-      for (auto &&support_point : support_points)
-      {
-        vec(counter++, 0) = func.value(support_point, support_point);
-      }
-    }
-  }
-
-  template <int func_dim, typename T>
-  void
-   Project_to_Basis(const Function<func_dim, T> &func,
-                    const std::vector<dealii::Point<func_dim>> &integration_points,
-                    const std::vector<dealii::Point<func_dim>> &support_points,
-                    const std::vector<dealii::Point<func_dim>> &normals_at_integration,
-                    const std::vector<dealii::Point<func_dim>> &normals_at_supports,
-                    const std::vector<double> &weights,
-                    Eigen::MatrixXd &vec)
-  {
-    if (std::is_same<Jacobi_Poly_Basis<dim>, basis_type>::value)
-    {
-      assert(bases.size() == integration_points.size());
-      assert(integration_points.size() == weights.size());
-      unsigned n_polys = bases[0].size();
-      vec = Eigen::MatrixXd::Zero(n_polys, 1);
-      for (unsigned i1 = 0; i1 < weights.size(); ++i1)
-      {
-        Eigen::MatrixXd Nj(n_polys, 1);
-        Nj = Eigen::VectorXd::Map(bases[i1].data(), n_polys);
-        vec += weights[i1] *
-               func.value(integration_points[i1], normals_at_integration[i1]) * Nj;
-      }
-    }
-    else if (std::is_same<Lagrange_Polys<dim>, basis_type>::value)
-    {
-      unsigned n_polys_1D = support_points_1D.size();
-      unsigned n_polys = pow(n_polys_1D, dim);
-      assert(support_points.size() == n_polys);
-      vec = Eigen::MatrixXd::Zero(n_polys, 1);
-      unsigned counter = 0;
-      for (auto &&support_point : support_points)
-      {
-        vec(counter, 0) = func.value(support_point, normals_at_supports[counter]);
-        counter++;
-      }
-    }
-  }
-};
-
 template <int dim, int spacedim = dim>
 struct Cell_Class
 {
@@ -205,7 +46,7 @@ struct Cell_Class
       BCs(n_faces)
   {
     pCell_FEValues = nullptr;
-    //    pFace_FEValues = nullptr;
+    pFace_FEValues = nullptr;
     std::stringstream ss_id;
     ss_id << inp_cell->id();
     cell_id = ss_id.str();
@@ -310,5 +151,7 @@ struct Face_Class
   std::vector<typename Cell_Class<dim>::vec_iterator_type> Parent_Ghosts;
   std::vector<unsigned> connected_face_of_parent_ghost;
 };
+
+#include "support_classes.tpp"
 
 #endif // SUPPORT_CLASSES

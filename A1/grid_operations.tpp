@@ -1,7 +1,7 @@
 #include "diffusion.hpp"
 
 template <int dim>
-void Diffusion_0<dim>::Set_Boundary_Indicator()
+void Diffusion<dim>::Set_Boundary_Indicator()
 {
   /* I am going to solve:
    *
@@ -38,7 +38,7 @@ void Diffusion_0<dim>::Set_Boundary_Indicator()
 }
 
 template <int dim>
-void Diffusion_0<dim>::Refine_Grid(int n)
+void Diffusion<dim>::Refine_Grid(int n)
 {
   if (refn_cycle == 0)
   {
@@ -75,7 +75,7 @@ void Diffusion_0<dim>::Refine_Grid(int n)
 }
 
 template <int dim>
-void Diffusion_0<dim>::Init_Mesh_Containers()
+void Diffusion<dim>::Init_Mesh_Containers()
 {
   /* What comes next is just a try to make things more comfortable for myself.
    * I want to store iterators to active cells, to be able to mess up with
@@ -106,7 +106,7 @@ void Diffusion_0<dim>::Init_Mesh_Containers()
 }
 
 template <int dim>
-void Diffusion_0<dim>::Count_Globals()
+void Diffusion<dim>::Count_Globals()
 {
   unsigned n_polyface = pow(poly_order + 1, dim - 1);
   std::vector<Cell_Class<dim>> All_Ghost_Cells;
@@ -843,7 +843,7 @@ void Diffusion_0<dim>::Count_Globals()
 }
 
 template <int dim>
-void Diffusion_0<dim>::Write_Grid_Out()
+void Diffusion<dim>::Write_Grid_Out()
 {
   dealii::GridOut Grid1_Out;
   dealii::GridOutFlags::Svg svg_flags(
@@ -884,7 +884,7 @@ void Wreck_it_Ralph(T &Wreckee)
 }
 
 template <int dim>
-void Diffusion_0<dim>::FreeUpContainers()
+void Diffusion<dim>::FreeUpContainers()
 {
   Wreck_it_Ralph(All_Owned_Cells);
   Wreck_it_Ralph(n_local_DOFs_connected_to_DOF);

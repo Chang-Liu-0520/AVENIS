@@ -1,7 +1,7 @@
 #include "diffusion.hpp"
 
 template <int dim>
-void Diffusion_0<dim>::OutLogger(std::ostream &logger, const std::string &log, bool insert_eol)
+void Diffusion<dim>::OutLogger(std::ostream &logger, const std::string &log, bool insert_eol)
 {
   if (comm_rank == 0)
   {
@@ -33,7 +33,7 @@ void Tokenize(const std::string &str_in,
  */
 
 template <int dim>
-PetscErrorCode Diffusion_0<dim>::Solve_Linear_Systam()
+PetscErrorCode Diffusion<dim>::Solve_Linear_Systam()
 {
   int rows_owned_lo, rows_owned_hi;
   MatCreate(comm, &global_mat);
@@ -173,7 +173,7 @@ PetscErrorCode Diffusion_0<dim>::Solve_Linear_Systam()
 }
 
 template <int dim>
-void Diffusion_0<dim>::Setup_System(unsigned refinement)
+void Diffusion<dim>::Setup_System(unsigned refinement)
 {
   char buffer[300];
   std::snprintf(buffer,
@@ -238,10 +238,6 @@ void parse_my_options(const int &rank,
                                           { "h_n", required_argument, 0, 'l' },
                                           { 0, 0, 0, 0 } };
 
-  //  p_1 = 3;
-  //  p_2 = 4;
-  //  h_1 = 2;
-  //  h_2 = 8;
   int long_index = 0;
   int opt = 0;
   opterr = 0;
@@ -285,6 +281,19 @@ void parse_my_options(const int &rank,
 
 int main(int argc, char *args[])
 {
+  /*
+   * I could not find a better place for testing MTL4 structures.
+   * I will remove these lines as soon as possible.
+   *
+  mtl::dense2D<double> AA1(10, 10);
+  AA1 = 20;
+  mtl::dense2D<double> BB1(10, 1);
+  BB1(4, 0) = 1.5;
+  mtl::dense2D<double> CC1(1, 10);
+  CC1 = mtl::mat::trans(BB1) * AA1;
+  std::cout << CC1 << std::endl;
+  */
+
   SlepcInitialize(&argc, &args, (char *)0, NULL);
   PetscMPIInt rank, size;
   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
@@ -371,7 +380,7 @@ int main(int argc, char *args[])
 
   for (unsigned p1 = (unsigned)p_1; p1 < (unsigned)p_2; ++p1)
   {
-    Diffusion_0<dim> diff0(p1, PETSC_COMM_WORLD, size, rank, number_of_threads, Adaptive);
+    Diffusion<dim> diff0(p1, PETSC_COMM_WORLD, size, rank, number_of_threads, Adaptive);
     for (unsigned h1 = (unsigned)h_1; h1 < (unsigned)h_2; ++h1)
     {
       diff0.Setup_System(h1);

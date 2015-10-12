@@ -84,42 +84,52 @@ using namespace ::LinearAlgebraTrilinos;
 #ifndef O_N_DIFFUSION
 #define O_N_DIFFUSION
 
-/* We want to prescribe the exact solution here ! We want to solve:
- *
- *         \grad u + q = 0
- *         \div ( \kappa q ) = f
- *
+/**
+ * We want to solve the diffusion equation with hybridized DG. We want to solve,
+ * the following equation in \f$\Omega \subset \mathbb R^{d}\f$ (with \f$ d=\f$
+ * \c dim):
+ * \f[\left\{\begin{aligned}\nabla u + \boldsymbol \kappa^{-1} \mathbf q = 0 &
+ *                          \\
+ *                          \nabla \cdot \mathbf q = f &
+ *           \end{aligned}
+ *    \right. \quad \text{in } \Omega.\f]
+ * with boundary conditions:
+ * \f[
+ *   \begin{aligned}
+ *     u = g_D & \quad \text{on } \Gamma_D ,\\
+ *     \mathbf q \cdot \boldsymbol n = g_N & \quad \text{on } \Gamma_N.
+ *   \end{aligned}
+ * \f]
+ * I will add all the formulation (specially different matrices) will be added
+ * here.
  */
-
 template <int dim>
-struct Diffusion_0
+struct Diffusion
 {
   static const unsigned n_faces_per_cell = dealii::GeometryInfo<dim>::faces_per_cell;
   typedef typename Cell_Class<dim>::dealii_Cell_Type Cell_Type;
-  //  typedef Jacobi_Poly_Basis<dim> elem_basis_type;
-  //  typedef Jacobi_Poly_Basis<dim - 1> face_basis_type;
-  typedef Lagrange_Polys<dim> elem_basis_type;
-  typedef Lagrange_Polys<dim - 1> face_basis_type;
+  typedef Jacobi_Poly_Basis<dim> elem_basis_type;
+  typedef Jacobi_Poly_Basis<dim - 1> face_basis_type;
+  //  typedef Lagrange_Polys<dim> elem_basis_type;
+  //  typedef Lagrange_Polys<dim - 1> face_basis_type;
 
-  /**
-   * @brief Diffusion_0: The constructor of the main class of the program.
-   *                     This constructor takes 6 arguments.
-   * @param order: The order of the elements.
-   * @param comm_: The MPI communicator.
-   * @param comm_size_: Number of MPI procs.
-   * @param comm_rank_: ID_Num of the current proc.
-   * @param n_threads: Number of OpenMP threads.
-   * @param Adaptive_ON_: A flag which tell to turn on the AMR.
-   * @param use_nodal_face_basis: true if the user wants to use nodal basis on
-   *                              faces.
+  /*!
+   * @brief The constructor of the main class of the program. This constructor
+   * takes 6 arguments.
+   * @param order The order of the elements.
+   * @param comm_ The MPI communicator.
+   * @param comm_size_ Number of MPI procs.
+   * @param comm_rank_ ID_Num of the current proc.
+   * @param n_threads Number of OpenMP threads.
+   * @param Adaptive_ON_ A flag which tell to turn on the AMR.
    */
-  Diffusion_0(const unsigned &order,
-              const MPI_Comm &comm_,
-              const unsigned &comm_size_,
-              const unsigned &comm_rank_,
-              const unsigned &n_threads,
-              const bool &Adaptive_ON_);
-  ~Diffusion_0();
+  Diffusion(const unsigned &order,
+            const MPI_Comm &comm_,
+            const unsigned &comm_size_,
+            const unsigned &comm_rank_,
+            const unsigned &n_threads,
+            const bool &Adaptive_ON_);
+  ~Diffusion();
 
   void FreeUpContainers();
   void OutLogger(std::ostream &logger, const std::string &log, bool insert_eol = true);
@@ -139,8 +149,8 @@ struct Diffusion_0
   const unsigned n_trace_unknowns;
   dealii::parallel::distributed::Triangulation<dim> Grid1;
   dealii::MappingQ1<dim> Elem_Mapping;
-  dealii::QGauss<dim> elem_integration_points;
-  dealii::QGauss<dim - 1> face_integration_points;
+  dealii::QGauss<dim> elem_integration_capsul;
+  dealii::QGauss<dim - 1> face_integration_capsul;
   dealii::QGaussLobatto<1> LGL_quad_1D;
   const std::vector<dealii::Point<1>> support_points_1D;
   dealii::FE_DGQ<dim> DG_Elem1;
@@ -148,8 +158,8 @@ struct Diffusion_0
   dealii::DoFHandler<dim> DoF_H_Refine;
   dealii::DoFHandler<dim> DoF_H1_System;
 
-  BasisIntegrator_Matrix<dim, elem_basis_type> Elem_Basis;
-  BasisIntegrator_Matrix<dim - 1, face_basis_type> Face_Basis;
+  Poly_Basis<elem_basis_type, dim> the_elem_basis;
+  Poly_Basis<face_basis_type, dim - 1> the_face_basis;
   unsigned refn_cycle;
 
   kappa_inv_class<dim, Eigen::MatrixXd> kappa_inv;
@@ -182,15 +192,14 @@ struct Diffusion_0
                          Poly_Basis<elem_basis_type, dim> &the_elem_basis);
 
   template <typename T>
-  void Calculate_Postprocess_Matrices(
-   Cell_Class<dim> &cell,
-   const BasisIntegrator_Matrix<dim, elem_basis_type> &PostProcess_Elem_Basis,
-   T &DM_star,
-   T &DB2);
+  void Calculate_Postprocess_Matrices(Cell_Class<dim> &cell,
+                                      const Poly_Basis<elem_basis_type, dim> &PostProcess_Elem_Basis,
+                                      T &DM_star,
+                                      T &DB2);
 
   template <typename T1>
   void PostProcess(Cell_Class<dim> &cell,
-                   const BasisIntegrator_Matrix<dim, elem_basis_type> &PostProcess_Elem_Basis,
+                   const Poly_Basis<elem_basis_type, dim> &PostProcess_Elem_Basis,
                    const T1 &u,
                    const T1 &q,
                    T1 &ustar,
@@ -271,6 +280,6 @@ void Tokenize(const std::string &str_in,
               const std::string &delimiters);
 
 #include "grid_operations.tpp"
-#include "o_n_diffusion.tpp"
+#include "diffusion.tpp"
 
 #endif // O_N_DIFFUSION

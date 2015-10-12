@@ -223,7 +223,30 @@ std::vector<dealii::Tensor<1, dim>>
   return grad;
 }
 
+/*
 template <int dim>
 Lagrange_Polys<dim>::~Lagrange_Polys()
 {
 }
+
+template <int dim>
+template <int func_dim>
+void Lagrange_Polys<dim>::project_to(const Function<func_dim, double> &func,
+                                     const std::vector<dealii::Point<func_dim>>
+&support_points_,
+                                     const std::vector<double> &weights,
+                                     Eigen::MatrixXd &vec)
+{
+}
+
+template <int dim>
+template <int func_dim, typename T>
+void Lagrange_Polys<dim>::project_to(
+ const Function<func_dim, T> &func,
+ const std::vector<dealii::Point<func_dim>> &support_points_,
+ const std::vector<dealii::Point<func_dim>> &normals_at_supports_,
+ const std::vector<double> &weights_,
+ Eigen::MatrixXd &vec)
+{
+}
+*/
