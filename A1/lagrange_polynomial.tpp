@@ -223,12 +223,12 @@ std::vector<dealii::Tensor<1, dim>>
   return grad;
 }
 
-/*
 template <int dim>
 Lagrange_Polys<dim>::~Lagrange_Polys()
 {
 }
 
+/*
 template <int dim>
 template <int func_dim>
 void Lagrange_Polys<dim>::project_to(const Function<func_dim, double> &func,

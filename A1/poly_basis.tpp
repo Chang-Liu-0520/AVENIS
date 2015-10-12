@@ -31,7 +31,7 @@
  *
  */
 template <typename Derived_Basis, int dim>
-Poly_Basis<Derived_Basis, dim>::Poly_Basis(
+poly_space_basis<Derived_Basis, dim>::poly_space_basis(
  const std::vector<dealii::Point<dim>> &integration_points_,
  const std::vector<dealii::Point<1, double>> &support_points_,
  const int &domain_)
@@ -83,7 +83,7 @@ Poly_Basis<Derived_Basis, dim>::Poly_Basis(
  */
 template <typename Derived_Basis, int dim>
 template <int func_dim, typename T>
-void Poly_Basis<Derived_Basis, dim>::Project_to_Basis(
+void poly_space_basis<Derived_Basis, dim>::Project_to_Basis(
  const Function<func_dim, T> &func,
  const std::vector<dealii::Point<func_dim>> &integration_points_,
  const std::vector<dealii::Point<func_dim>> &support_points_,
@@ -115,7 +115,7 @@ void Poly_Basis<Derived_Basis, dim>::Project_to_Basis(
 
 template <typename Derived_Basis, int dim>
 template <int func_dim, typename T>
-void Poly_Basis<Derived_Basis, dim>::Project_to_Basis(
+void poly_space_basis<Derived_Basis, dim>::Project_to_Basis(
  const Function<func_dim, T> &func,
  const std::vector<dealii::Point<func_dim>> &integration_points_,
  const std::vector<dealii::Point<func_dim>> &support_points_,
@@ -152,7 +152,7 @@ void Poly_Basis<Derived_Basis, dim>::Project_to_Basis(
 
 template <typename Derived_Basis, int dim>
 std::vector<double>
- Poly_Basis<Derived_Basis, dim>::value(const dealii::Point<dim, double> &P0)
+ poly_space_basis<Derived_Basis, dim>::value(const dealii::Point<dim, double> &P0)
 {
   return poly_basis.value(P0);
 }
@@ -181,7 +181,7 @@ std::vector<double>
  */
 template <typename Derived_Basis, int dim>
 std::vector<double>
- Poly_Basis<Derived_Basis, dim>::value(const dealii::Point<dim, double> &P0,
+ poly_space_basis<Derived_Basis, dim>::value(const dealii::Point<dim, double> &P0,
                                        const unsigned half_range)
 {
   return poly_basis.value(P0, half_range);
@@ -189,12 +189,12 @@ std::vector<double>
 
 template <typename Derived_Basis, int dim>
 std::vector<dealii::Tensor<1, dim>>
- Poly_Basis<Derived_Basis, dim>::grad(const dealii::Point<dim, double> &P0)
+ poly_space_basis<Derived_Basis, dim>::grad(const dealii::Point<dim, double> &P0)
 {
   return poly_basis.grad(P0);
 }
 
 template <typename Derived_Basis, int dim>
-Poly_Basis<Derived_Basis, dim>::~Poly_Basis()
+poly_space_basis<Derived_Basis, dim>::~poly_space_basis()
 {
 }

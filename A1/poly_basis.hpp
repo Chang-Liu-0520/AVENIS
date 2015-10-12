@@ -27,18 +27,18 @@ enum Domain
  * stores the corresponding basis.
  */
 template <typename Derived_Basis, int dim>
-class Poly_Basis
+class poly_space_basis
 {
  public:
-  Poly_Basis() = delete;
-  Poly_Basis(const std::vector<dealii::Point<dim>> &integration_points,
+  poly_space_basis() = delete;
+  poly_space_basis(const std::vector<dealii::Point<dim>> &integration_points,
              const std::vector<dealii::Point<1, double>> &support_points,
              const int &domain_);
   std::vector<double> value(const dealii::Point<dim, double> &P0);
   std::vector<double>
    value(const dealii::Point<dim, double> &P0, const unsigned half_range);
   std::vector<dealii::Tensor<1, dim>> grad(const dealii::Point<dim, double> &P0);
-  ~Poly_Basis();
+  ~poly_space_basis();
 
   unsigned n_polys;
   std::vector<std::vector<double>> bases;

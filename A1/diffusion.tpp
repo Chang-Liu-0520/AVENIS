@@ -129,15 +129,12 @@ void Diffusion<dim>::Compute_Error(const Function<dim, dealii::Tensor<1, dim>> &
  * and elements.
  */
 template <int dim>
-void Diffusion<dim>::CalculateMatrices(Cell_Class<dim> &cell,
-                                       Poly_Basis<elem_basis_type, dim> &the_elem_basis)
+void Diffusion<dim>::CalculateMatrices(Cell_Class<dim> &cell)
 {
   const unsigned n_polys = pow(poly_order + 1, dim);
   const unsigned n_polyfaces = pow(poly_order + 1, dim - 1);
   typedef Eigen::MatrixXd T;
 
-  Poly_Basis<face_basis_type, dim - 1> face_poly_basis(
-   face_integration_capsul.get_points(), support_points_1D, Domain::From_0_to_1);
   std::vector<dealii::DerivativeForm<1, dim, dim>> D_Forms =
    cell.pCell_FEValues->get_inverse_jacobians();
   std::vector<dealii::Point<dim>> QPoints_Locs =
@@ -205,7 +202,7 @@ void Diffusion<dim>::CalculateMatrices(Cell_Class<dim> &cell,
 
       face_basis = the_face_basis.bases[i_Q_face];
       half_range_face_basis =
-       face_poly_basis.value(Face_Q_Points[i_Q_face], cell.half_range_flag[i_face]);
+       the_face_basis.value(Face_Q_Points[i_Q_face], cell.half_range_flag[i_face]);
 
       for (unsigned i_polyface = 0; i_polyface < n_polyfaces; ++i_polyface)
       {
@@ -243,8 +240,6 @@ void Diffusion<dim>::Assemble_Globals()
 {
   unsigned n_polys = pow(poly_order + 1, dim);
   unsigned n_polyfaces = pow(poly_order + 1, dim - 1);
-  Poly_Basis<elem_basis_type, dim> elem_poly_basis(
-   elem_integration_capsul.get_points(), support_points_1D, Domain::From_0_to_1);
   std::vector<double> Q_Weights = elem_integration_capsul.get_weights();
   std::vector<double> Face_Q_Weights = face_integration_capsul.get_weights();
   dealii::QGaussLobatto<dim> LGL_elem_support_points(poly_order + 1);
@@ -300,7 +295,7 @@ void Diffusion<dim>::Assemble_Globals()
       cell.reinit_Cell_FEValues();
 
       Eigen::MatrixXd A, B, C, D, E, H, H2, M;
-      CalculateMatrices(cell, elem_poly_basis);
+      CalculateMatrices(cell);
       cell.get_matrices(A, B, C, D, E, H, H2, M);
 
       Eigen::MatrixXd Ainv = A.inverse();
@@ -532,7 +527,7 @@ void Diffusion<dim>::Calculate_Internal_Unknowns(double *const &local_uhat_vec)
 
   unsigned n_polys = pow(poly_order + 1, dim);
   unsigned n_polyfaces = pow(poly_order + 1, dim - 1);
-  Poly_Basis<elem_basis_type, dim> the_elem_basis(
+  poly_space_basis<elem_basis_type, dim> the_elem_basis(
    elem_integration_capsul.get_points(), support_points_1D, Domain::From_0_to_1);
 
   double Error_u = 0;
@@ -545,7 +540,7 @@ void Diffusion<dim>::Calculate_Internal_Unknowns(double *const &local_uhat_vec)
   std::vector<double> Face_Q_Weights = face_integration_capsul.get_weights();
 
   dealii::QGaussLobatto<1> postproc_support_points(poly_order + 2);
-  Poly_Basis<elem_basis_type, dim> the_postproc_elem_basis(
+  poly_space_basis<elem_basis_type, dim> the_postproc_elem_basis(
    elem_integration_capsul.get_points(),
    postproc_support_points.get_points(),
    Domain::From_0_to_1);
@@ -557,7 +552,7 @@ void Diffusion<dim>::Calculate_Internal_Unknowns(double *const &local_uhat_vec)
   Eigen::MatrixXd Mode_to_QPoint_Matrix = the_elem_basis.the_bases;
 
   dealii::FE_DGQ<1> DG_Elem_1D(poly_order);
-  Poly_Basis<elem_basis_type, dim> the_elem_qual_dist_basis(
+  poly_space_basis<elem_basis_type, dim> the_elem_qual_dist_basis(
    DG_Elem1.get_unit_support_points(), LGL_quad_1D.get_points(), Domain::From_0_to_1);
   Eigen::MatrixXd Mode_to_Node_Matrix = the_elem_qual_dist_basis.the_bases;
 
@@ -615,7 +610,7 @@ void Diffusion<dim>::Calculate_Internal_Unknowns(double *const &local_uhat_vec)
       cell.reinit_Cell_FEValues();
 
       Eigen::MatrixXd A, B, C, D, E, H, H2, M;
-      CalculateMatrices(cell, the_elem_basis);
+      CalculateMatrices(cell);
       cell.get_matrices(A, B, C, D, E, H, H2, M);
 
       Eigen::MatrixXd BT_Ainv = B.transpose() * A.inverse();
@@ -842,7 +837,7 @@ template <int dim>
 template <typename T>
 void Diffusion<dim>::Calculate_Postprocess_Matrices(
  Cell_Class<dim> &cell,
- const Poly_Basis<elem_basis_type, dim> &PostProcess_Elem_Basis,
+ const poly_space_basis<elem_basis_type, dim> &PostProcess_Elem_Basis,
  T &DM_star,
  T &DB2)
 {
@@ -889,7 +884,7 @@ void Diffusion<dim>::Calculate_Postprocess_Matrices(
 template <int dim>
 template <typename T1>
 void Diffusion<dim>::PostProcess(Cell_Class<dim> &cell,
-                                 const Poly_Basis<elem_basis_type, dim> &PostProcess_Elem_Basis,
+                                 const poly_space_basis<elem_basis_type, dim> &PostProcess_Elem_Basis,
                                  const T1 &u,
                                  const T1 &q,
                                  T1 &ustar,

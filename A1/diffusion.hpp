@@ -108,10 +108,10 @@ struct Diffusion
 {
   static const unsigned n_faces_per_cell = dealii::GeometryInfo<dim>::faces_per_cell;
   typedef typename Cell_Class<dim>::dealii_Cell_Type Cell_Type;
-  typedef Jacobi_Poly_Basis<dim> elem_basis_type;
-  typedef Jacobi_Poly_Basis<dim - 1> face_basis_type;
-  //  typedef Lagrange_Polys<dim> elem_basis_type;
-  //  typedef Lagrange_Polys<dim - 1> face_basis_type;
+  //  typedef Jacobi_Poly_Basis<dim> elem_basis_type;
+  //  typedef Jacobi_Poly_Basis<dim - 1> face_basis_type;
+  typedef Lagrange_Polys<dim> elem_basis_type;
+  typedef Lagrange_Polys<dim - 1> face_basis_type;
 
   /*!
    * @brief The constructor of the main class of the program. This constructor
@@ -149,17 +149,17 @@ struct Diffusion
   const unsigned n_trace_unknowns;
   dealii::parallel::distributed::Triangulation<dim> Grid1;
   dealii::MappingQ1<dim> Elem_Mapping;
-  dealii::QGauss<dim> elem_integration_capsul;
-  dealii::QGauss<dim - 1> face_integration_capsul;
-  dealii::QGaussLobatto<1> LGL_quad_1D;
+  const dealii::QGauss<dim> elem_integration_capsul;
+  const dealii::QGauss<dim - 1> face_integration_capsul;
+  const dealii::QGaussLobatto<1> LGL_quad_1D;
   const std::vector<dealii::Point<1>> support_points_1D;
   dealii::FE_DGQ<dim> DG_Elem1;
   dealii::FESystem<dim> DG_System1;
   dealii::DoFHandler<dim> DoF_H_Refine;
   dealii::DoFHandler<dim> DoF_H1_System;
 
-  Poly_Basis<elem_basis_type, dim> the_elem_basis;
-  Poly_Basis<face_basis_type, dim - 1> the_face_basis;
+  poly_space_basis<elem_basis_type, dim> the_elem_basis;
+  poly_space_basis<face_basis_type, dim - 1> the_face_basis;
   unsigned refn_cycle;
 
   kappa_inv_class<dim, Eigen::MatrixXd> kappa_inv;
@@ -188,18 +188,17 @@ struct Diffusion
                             double &Error_q,
                             double &Error_div_q);
 
-  void CalculateMatrices(Cell_Class<dim> &cell,
-                         Poly_Basis<elem_basis_type, dim> &the_elem_basis);
+  void CalculateMatrices(Cell_Class<dim> &cell);
 
   template <typename T>
   void Calculate_Postprocess_Matrices(Cell_Class<dim> &cell,
-                                      const Poly_Basis<elem_basis_type, dim> &PostProcess_Elem_Basis,
+                                      const poly_space_basis<elem_basis_type, dim> &PostProcess_Elem_Basis,
                                       T &DM_star,
                                       T &DB2);
 
   template <typename T1>
   void PostProcess(Cell_Class<dim> &cell,
-                   const Poly_Basis<elem_basis_type, dim> &PostProcess_Elem_Basis,
+                   const poly_space_basis<elem_basis_type, dim> &PostProcess_Elem_Basis,
                    const T1 &u,
                    const T1 &q,
                    T1 &ustar,
