@@ -101,6 +101,7 @@ PetscErrorCode Diffusion<dim>::Solve_Linear_Systam()
   PC ThePreCond;
   KSPGetPC(TheSolver, &ThePreCond);
   PCSetFromOptions(ThePreCond);
+
   PCSetType(ThePreCond, PCGAMG);
   PCGAMGSetType(ThePreCond, PCGAMGAGG);
   PCGAMGSetNSmooths(ThePreCond, 1);
@@ -316,12 +317,13 @@ int main(int argc, char *args[])
                   300,
                   "\n"
                   "mpiexec -n 8 ./A1 -h_0 2 -h_n 12 -p_0 1 -p_n 2 -amr 1 "
+                  /*
                   "-pc_type hypre -pc_hypre_type boomeramg "
                   "-pc_hypre_boomeramg_strong_threshold 0.25 "
                   "-pc_hypre_boomeramg_coarsen_type CLJP "
                   "-pc_hypre_boomeramg_max_levels 100 "
-                  "-pc_hypre_boomeramg_interp_type standard -ksp_type cg "
-                  "-face_basis modal"
+                  "-pc_hypre_boomeramg_interp_type standard"
+                  */
                   "\n");
     std::cout << help_line << std::endl;
     std::ofstream Convergence_Cleaner("Convergence_Result.txt");
@@ -371,11 +373,13 @@ int main(int argc, char *args[])
     }
   }
 
+  /*
   p_1 = 3;
   p_2 = 4;
   h_1 = 2;
   h_2 = 8;
   Adaptive = 0;
+  */
   const int dim = 2;
 
   for (unsigned p1 = (unsigned)p_1; p1 < (unsigned)p_2; ++p1)
