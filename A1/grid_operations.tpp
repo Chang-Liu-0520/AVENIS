@@ -84,14 +84,14 @@ void Diffusion<dim>::Init_Mesh_Containers()
    * std::vector will be reconstructed with the new cells ! At the time that I
    * did this, it looked smart !!
    */
-  DoF_H1_System.distribute_dofs(DG_System1);
-  DoF_H_Refine.distribute_dofs(DG_Elem1);
+  DoF_H_System.distribute_dofs(DG_System);
+  DoF_H_Refine.distribute_dofs(DG_Elem);
 
   All_Owned_Cells.reserve(Grid1.n_locally_owned_active_cells());
   unsigned n_cell = 0;
   n_ghost_cell = 0;
   n_active_cell = 0;
-  for (Cell_Type &&cell : DoF_H1_System.active_cell_iterators())
+  for (Cell_Type &&cell : DoF_H_System.active_cell_iterators())
   {
     if (cell->is_locally_owned())
     {
@@ -113,7 +113,7 @@ void Diffusion<dim>::Count_Globals()
   All_Ghost_Cells.reserve(n_ghost_cell);
   std::map<std::string, int> Ghost_ID_to_num;
   unsigned ghost_cell_counter = 0;
-  for (Cell_Type &&cell : DoF_H1_System.active_cell_iterators())
+  for (Cell_Type &&cell : DoF_H_System.active_cell_iterators())
   {
     if (cell->is_ghost())
     {

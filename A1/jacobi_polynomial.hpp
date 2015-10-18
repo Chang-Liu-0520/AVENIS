@@ -6,6 +6,7 @@
 #define Jacobi_Polynomials
 
 #include "poly_basis.hpp"
+#include "support_classes.hpp"
 
 template <int dim>
 class Jacobi_Poly_Basis //: public Poly_Basis<Jacobi_Poly_Basis<dim>, dim>
@@ -26,23 +27,18 @@ class Jacobi_Poly_Basis //: public Poly_Basis<Jacobi_Poly_Basis<dim>, dim>
   std::vector<double> value(const double &);
   std::vector<double> derivative(const double &);
 
-  /*
   template <int func_dim>
   void project_to(const Function<func_dim, double> &func,
-                  const std::vector<dealii::Point<func_dim>>
-  &integration_points_,
+                  const std::vector<dealii::Point<func_dim>> &integration_points_,
                   const std::vector<double> &weights,
                   Eigen::MatrixXd &vec);
 
   template <int func_dim, typename T>
   void project_to(const Function<func_dim, T> &func,
-                  const std::vector<dealii::Point<func_dim>>
-  &integration_points,
-                  const std::vector<dealii::Point<func_dim>>
-  &normals_at_integration,
+                  const std::vector<dealii::Point<func_dim>> &integration_points,
+                  const std::vector<dealii::Point<func_dim>> &normals_at_integration,
                   const std::vector<double> &weights,
                   Eigen::MatrixXd &vec);
-  */
 
  private:
   const double integral_sc_fac;

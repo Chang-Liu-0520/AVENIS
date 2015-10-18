@@ -108,10 +108,10 @@ struct Diffusion
 {
   static const unsigned n_faces_per_cell = dealii::GeometryInfo<dim>::faces_per_cell;
   typedef typename Cell_Class<dim>::dealii_Cell_Type Cell_Type;
-  //  typedef Jacobi_Poly_Basis<dim> elem_basis_type;
-  //  typedef Jacobi_Poly_Basis<dim - 1> face_basis_type;
-  typedef Lagrange_Polys<dim> elem_basis_type;
-  typedef Lagrange_Polys<dim - 1> face_basis_type;
+  typedef Jacobi_Poly_Basis<dim> elem_basis_type;
+  typedef Jacobi_Poly_Basis<dim - 1> face_basis_type;
+  //  typedef Lagrange_Polys<dim> elem_basis_type;
+  //  typedef Lagrange_Polys<dim - 1> face_basis_type;
 
   /*!
    * @brief The constructor of the main class of the program. This constructor
@@ -153,10 +153,10 @@ struct Diffusion
   const dealii::QGauss<dim - 1> face_integration_capsul;
   const dealii::QGaussLobatto<1> LGL_quad_1D;
   const std::vector<dealii::Point<1>> support_points_1D;
-  dealii::FE_DGQ<dim> DG_Elem1;
-  dealii::FESystem<dim> DG_System1;
+  dealii::FE_DGQ<dim> DG_Elem;
+  dealii::FESystem<dim> DG_System;
   dealii::DoFHandler<dim> DoF_H_Refine;
-  dealii::DoFHandler<dim> DoF_H1_System;
+  dealii::DoFHandler<dim> DoF_H_System;
 
   poly_space_basis<elem_basis_type, dim> the_elem_basis;
   poly_space_basis<face_basis_type, dim - 1> the_face_basis;
@@ -245,6 +245,18 @@ struct Diffusion
                      const Eigen::MatrixXd &modal_vector,
                      const Eigen::MatrixXd &mode_to_Qpoint_matrix,
                      double &error);
+
+  void initiate_mat_calc_fe_vals(
+   std::unique_ptr<dealii::FEValues<dim>> &fe_vals_cell_1,
+   std::unique_ptr<dealii::FEFaceValues<dim>> &fe_vals_face_1,
+   std::unique_ptr<dealii::FEValues<dim>> &fe_vals_cell_2,
+   std::unique_ptr<dealii::FEFaceValues<dim>> &fe_vals_face_2);
+
+  void initiate_internal_calc_fe_vals(
+   std::unique_ptr<dealii::FEValues<dim>> &fe_vals_cell_1,
+   std::unique_ptr<dealii::FEFaceValues<dim>> &fe_vals_face_1,
+   std::unique_ptr<dealii::FEValues<dim>> &fe_vals_cell_2,
+   std::unique_ptr<dealii::FEFaceValues<dim>> &fe_vals_face_2);
 
   unsigned n_ghost_cell;
   unsigned n_active_cell;

@@ -255,12 +255,10 @@ Jacobi_Poly_Basis<dim>::~Jacobi_Poly_Basis()
 {
 }
 
-/*
 template <int dim>
 template <int func_dim>
 void Jacobi_Poly_Basis<dim>::project_to(const Function<func_dim, double> &func,
-                                        const
-std::vector<dealii::Point<func_dim>> &integration_points_,
+                                        const std::vector<dealii::Point<func_dim>> &integration_points_,
                                         const std::vector<double> &weights,
                                         Eigen::MatrixXd &vec)
 {
@@ -276,4 +274,3 @@ void Jacobi_Poly_Basis<dim>::project_to(
  Eigen::MatrixXd &vec)
 {
 }
-*/
