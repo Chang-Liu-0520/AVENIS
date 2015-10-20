@@ -67,7 +67,6 @@ void Diffusion<dim>::Refine_Grid(int n)
 
   double penalty1 = 8.5;
   taus.assign(n_faces_per_cell, penalty1);
-  //  Set_Boundary_Indicator(Grid1);
   Set_Boundary_Indicator();
 
   FreeUpContainers();

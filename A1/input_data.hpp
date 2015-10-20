@@ -5,6 +5,19 @@
 #ifndef INPUT_DATA_HPP
 #define INPUT_DATA_HPP
 
+/*!
+ * \brief
+ * This class gives the values of the diffusivity tensor \f$\kappa_{ij}\f$ at
+ * any given point.
+ * \details
+ * As a reminder we are solving \f[\begin{aligned}\kappa_{ij} u_{,i} &= q_j \\
+ * q_{j,j} &= f \end{aligned} \quad \text{in } \Omega\f] with boundary
+ * conditions:
+ * \f[\begin{aligned} u &= g_D \quad \text{on } \Gamma_D, \\
+ *         q_{,i}n_{,i} &= g_N \quad \text{on } \Gamma_N.
+ * \end{aligned}\f]
+ * \ingroup Functions
+ */
 template <int dim, typename T>
 struct kappa_inv_class : public Function<dim, T>
 {
@@ -80,6 +93,18 @@ struct kappa_inv_class : public Function<dim, T>
   }
 };
 
+/*!
+ * \ingroup Functions
+ * \brief This class gives the values of the analytical \f$u\f$ at a given
+ * point.
+ * \details
+ * As a reminder we are solving \f[\begin{aligned}\kappa_{ij} u_{,i} &= q_j \\
+ * q_{j,j} &= f \end{aligned} \quad \text{in } \Omega\f] with boundary
+ * conditions:
+ * \f[\begin{aligned} u &= g_D \quad \text{on } \Gamma_D, \\
+ *         q_{,i}n_{,i} &= g_N \quad \text{on } \Gamma_N.
+ * \end{aligned}\f]
+ */
 template <int dim, typename T>
 struct u_func_class : public Function<dim, T>
 {
@@ -95,6 +120,18 @@ struct u_func_class : public Function<dim, T>
   }
 };
 
+/*!
+ * \ingroup Functions
+ * \brief This class gives the values of the analytical \f$q_i\f$ at a given
+ * point.
+ * \details
+ * As a reminder we are solving \f[\begin{aligned}\kappa_{ij} u_{,i} &= q_j \\
+ * q_{j,j} &= f \end{aligned} \quad \text{in } \Omega\f] with boundary
+ * conditions:
+ * \f[\begin{aligned} u &= g_D \quad \text{on } \Gamma_D, \\
+ *         q_{,i}n_{,i} &= g_N \quad \text{on } \Gamma_N.
+ * \end{aligned}\f]
+ */
 template <int dim, typename T>
 struct q_func_class : public Function<dim, T>
 {
@@ -118,6 +155,18 @@ struct q_func_class : public Function<dim, T>
   }
 };
 
+/*!
+ * \ingroup Functions
+ * \brief This class gives the values of the analytical \f$(q_i)_{,i}\f$ at
+ * a given point.
+ * \details
+ * As a reminder we are solving \f[\begin{aligned}\kappa_{ij} u_{,i} &= q_j \\
+ * q_{j,j} &= f \end{aligned} \quad \text{in } \Omega\f] with boundary
+ * conditions:
+ * \f[\begin{aligned} u &= g_D \quad \text{on } \Gamma_D, \\
+ *         q_{,i}n_{,i} &= g_N \quad \text{on } \Gamma_N.
+ * \end{aligned}\f]
+ */
 template <int dim, typename T>
 struct divq_func_class : public Function<dim, T>
 {
@@ -130,6 +179,18 @@ struct divq_func_class : public Function<dim, T>
   }
 };
 
+/*!
+ * \ingroup Functions
+ * \brief This class gives the values of the analytical \f$f\f$ at a given
+ * point.
+ * \details
+ * As a reminder we are solving \f[\begin{aligned}\kappa_{ij} u_{,i} &= q_j \\
+ * q_{j,j} &= f \end{aligned} \quad \text{in } \Omega\f] with boundary
+ * conditions:
+ * \f[\begin{aligned} u &= g_D \quad \text{on } \Gamma_D, \\
+ *         q_{,i}n_{,i} &= g_N \quad \text{on } \Gamma_N.
+ * \end{aligned}\f]
+ */
 template <int dim, typename T>
 struct f_func_class : public Function<dim, T>
 {
@@ -152,6 +213,18 @@ struct f_func_class : public Function<dim, T>
   }
 };
 
+/*!
+ * \ingroup Functions
+ * \brief This class gives the values of the analytical \f$g_D\f$ at a given
+ * point.
+ * \details
+ * As a reminder we are solving \f[\begin{aligned}\kappa_{ij} u_{,i} &= q_j \\
+ * q_{j,j} &= f \end{aligned} \quad \text{in } \Omega\f] with boundary
+ * conditions:
+ * \f[\begin{aligned} u &= g_D \quad \text{on } \Gamma_D, \\
+ *         q_{,i}n_{,i} &= g_N \quad \text{on } \Gamma_N.
+ * \end{aligned}\f]
+ */
 template <int dim, typename T>
 struct Dirichlet_BC_func_class : public Function<dim, T>
 {
@@ -170,6 +243,18 @@ struct Dirichlet_BC_func_class : public Function<dim, T>
   }
 };
 
+/*!
+ * \ingroup Functions
+ * \brief This class gives the values of the analytical \f$g_N\f$ at a given
+ * point.
+ * \details
+ * As a reminder we are solving \f[\begin{aligned}\kappa_{ij} u_{,i} &= q_j \\
+ * q_{j,j} &= f \end{aligned} \quad \text{in } \Omega\f] with boundary
+ * conditions:
+ * \f[\begin{aligned} u &= g_D \quad \text{on } \Gamma_D, \\
+ *         q_{,i}n_{,i} &= g_N \quad \text{on } \Gamma_N.
+ * \end{aligned}\f]
+ */
 template <int dim, typename T>
 struct Neumann_BC_func_class : public Function<dim, T>
 {

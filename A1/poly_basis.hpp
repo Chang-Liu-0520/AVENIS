@@ -8,6 +8,13 @@
 #ifndef POLY_BASIS
 #define POLY_BASIS
 
+/*!
+ * \defgroup basis_funcs Basis Functions
+ * \brief
+ * This module contains all classes which are used to construct the polynomial
+ * basis inside each element, and on their faces.
+ */
+
 enum Domain
 {
   From_0_to_1 = 1 << 0,
@@ -20,11 +27,14 @@ enum Domain
 #include "support_classes.hpp"
 
 /*!
+ * \brief The static base class for all other polynomial basis.
+ *
  * This structure contains the basis functions, their gradients,
  * and their divergence. The main motivation behind this is to avoid the
  * repeated calculation of bases on a unit cell for every element. This
  * structure has a constructor which takes quadrature points as inputs and
  * stores the corresponding basis.
+ * \ingroup basis_funcs
  */
 template <typename Derived_Basis, int dim>
 class poly_space_basis
@@ -32,8 +42,8 @@ class poly_space_basis
  public:
   poly_space_basis() = delete;
   poly_space_basis(const std::vector<dealii::Point<dim>> &integration_points,
-             const std::vector<dealii::Point<1, double>> &support_points,
-             const int &domain_);
+                   const std::vector<dealii::Point<1, double>> &support_points,
+                   const int &domain_);
   std::vector<double> value(const dealii::Point<dim, double> &P0);
   std::vector<double>
    value(const dealii::Point<dim, double> &P0, const unsigned half_range);

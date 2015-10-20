@@ -8,6 +8,10 @@
 #include "poly_basis.hpp"
 #include "support_classes.hpp"
 
+/*!
+ * \brief The Legendre polynomial basis.
+ * \ingroup basis_funcs
+ */
 template <int dim>
 class Jacobi_Poly_Basis //: public Poly_Basis<Jacobi_Poly_Basis<dim>, dim>
 {

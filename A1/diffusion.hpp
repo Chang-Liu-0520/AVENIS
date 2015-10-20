@@ -84,25 +84,6 @@ using namespace ::LinearAlgebraTrilinos;
 #ifndef O_N_DIFFUSION
 #define O_N_DIFFUSION
 
-/**
- * We want to solve the diffusion equation with hybridized DG. We want to solve,
- * the following equation in \f$\Omega \subset \mathbb R^{d}\f$ (with \f$ d=\f$
- * \c dim):
- * \f[\left\{\begin{aligned}\nabla u + \boldsymbol \kappa^{-1} \mathbf q = 0 &
- *                          \\
- *                          \nabla \cdot \mathbf q = f &
- *           \end{aligned}
- *    \right. \quad \text{in } \Omega.\f]
- * with boundary conditions:
- * \f[
- *   \begin{aligned}
- *     u = g_D & \quad \text{on } \Gamma_D ,\\
- *     \mathbf q \cdot \boldsymbol n = g_N & \quad \text{on } \Gamma_N.
- *   \end{aligned}
- * \f]
- * I will add all the formulation (specially different matrices) will be added
- * here.
- */
 template <int dim>
 struct Diffusion
 {

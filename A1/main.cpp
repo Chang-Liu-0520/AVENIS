@@ -1,6 +1,56 @@
+/*  This is the main file.
+ *  This file contains the main function, an output writer function
+ *  (OutLogger), an auxiliary function for input parser (Tokenize), Solver of
+ *  the diffusion, and two minor functions, which are not important in this
+ *  version of documentation.
+ *  @author Ali - Computational Hydraulics Group, ICES, UT Austin.
+ *  @date October 2015.
+ *  @bug No known bugs.
+ */
+
+/*!
+ * \mainpage
+ *
+ * \section intro_sec Introduction
+ * This software was written from February to October 2015, to study the single
+ * phase flow in a strongly anisotropic nonhomogeneous medium, using hybrid
+ * discontinuous Galerkin method. We are using deal.II, PETSc, HYPRE, p4est, and
+ * Eigen libraries. The results were submitted to <a
+ * href="http://www.journals.elsevier.com/computer-methods-in-applied-mechanics-and-engineering/">
+ * CMAME </a> in August 2015.
+ *
+ * This was a part of an ongoing project supported by DOE under award
+ * DE-SC0009286, and NSF grant ACI-1339801.
+ *
+ * \section equations_sec Governing equation
+ * We want to solve the diffusion equation with hybridized DG. We want to
+ * solve, the following equation in \f$\Omega \subset \mathbb R^{d}\f$ (with \f$
+ * d=\f$ \c dim):
+ * \f[\left\{\begin{aligned}\nabla u + \boldsymbol \kappa^{-1} \mathbf q = 0 &
+ *                          \\
+ *                          \nabla \cdot \mathbf q = f &
+ *           \end{aligned}
+ *    \right. \quad \text{in } \Omega.\f]
+ * with boundary conditions:
+ * \f[
+ *   \begin{aligned}
+ *     u = g_D & \quad \text{on } \Gamma_D ,\\
+ *     \mathbf q \cdot \boldsymbol n = g_N & \quad \text{on } \Gamma_N.
+ *   \end{aligned}
+ * \f]
+ */
+
 #include "diffusion.hpp"
 
 template <int dim>
+/*!
+ * \brief Diffusion<dim>::OutLogger.
+ * \param[in]  logger is the ostream which should print the output.
+ * \param[in]  log is the meassage to be shown.
+ * \param[in]  insert_eol is a key to determine that inserting an end of line is
+ * required or not.
+ * \return Nothing.
+ */
 void Diffusion<dim>::OutLogger(std::ostream &logger, const std::string &log, bool insert_eol)
 {
   if (comm_rank == 0)
@@ -12,6 +62,12 @@ void Diffusion<dim>::OutLogger(std::ostream &logger, const std::string &log, boo
   }
 }
 
+/*!
+ * \brief Tokenize
+ * \param str_in
+ * \param tokens
+ * \param delimiters
+ */
 void Tokenize(const std::string &str_in,
               std::vector<std::string> &tokens,
               const std::string &delimiters = " ")
@@ -280,6 +336,12 @@ void parse_my_options(const int &rank,
   }
 }
 
+/*!
+ * \brief main
+ * \param  argc
+ * \param  args
+ * \return 0 if the program is executed successfully.
+ */
 int main(int argc, char *args[])
 {
   /*

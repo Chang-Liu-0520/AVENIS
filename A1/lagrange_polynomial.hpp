@@ -5,6 +5,11 @@
 #ifndef LAGRANGE_POLIES_H
 #define LAGRANGE_POLIES_H
 
+/*!
+ * \brief
+ * The Lagrangian polinomial basis.
+ * \ingroup basis_funcs
+ */
 template <int dim>
 class Lagrange_Polys
 {
